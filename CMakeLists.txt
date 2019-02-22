@@ -30,8 +30,8 @@ option( Build_PTX ON )
 #Required packages and libraries
 find_package( IntersonArraySDKCxx REQUIRED )
 
-find_package( PlusLib REQUIRED )
-include( ${PlusLib_USE_FILE} )
+#find_package( PlusLib REQUIRED )
+#include( ${PlusLib_USE_FILE} )
 
 find_package( ITK REQUIRED )
 
@@ -118,6 +118,34 @@ target_link_libraries( OpticNerveUI PUBLIC
 )
 
 install( TARGETS OpticNerveUI
+  RUNTIME DESTINATION bin COMPONENT Runtime
+  LIBRARY DESTINATION bin COMPONENT Runtime
+  ARCHIVE DESTINATION lib COMPONENT Development
+)
+
+#Scoliosis ui executable
+
+qt5_wrap_ui( ScoliosisUI_H Scoliosis.ui )
+qt5_wrap_cpp( scoliosis_source_files_moc ScoliosisUI.h )
+
+set( scoliosis_source_files
+  ScoliosisDriver.cxx
+  ScoliosisUI.cxx
+)
+
+add_executable( ScoliosisUI
+  ${scoliosis_source_files}
+  ${ScoliosisUI_H}
+  ${scoliosis_source_files_moc}
+)
+
+target_link_libraries( ScoliosisUI PUBLIC
+  ${ITK_LIBRARIES}
+  ${IntersonArraySDKCxx_LIBRARIES}
+  Qt5::Widgets
+)
+
+install( TARGETS ScoliosisUI
   RUNTIME DESTINATION bin COMPONENT Runtime
   LIBRARY DESTINATION bin COMPONENT Runtime
   ARCHIVE DESTINATION lib COMPONENT Development
@@ -221,8 +249,6 @@ endif()
 
 
 
-
-
 #CPack setup
 
 include( InstallRequiredSystemLibraries )
@@ -245,7 +271,9 @@ set( windeployqt "${_dir}/windeployqt.exe" )
 if( NOT EXISTS ${windeployqt} )
   message( FATAL_ERROR "Failed to locate windeployqt executable: [${windeployqt}]" )
 endif()
+message( "THE code:")
+message( "${windeployqt}" )
 install( CODE "execute_process(COMMAND \"${windeployqt}\" \"\${CMAKE_INSTALL_PREFIX}/bin/OpticNerveUI.exe\")" )
-install( CODE "execute_process(COMMAND \"${windeployqt}\" \"\${CMAKE_INSTALL_PREFIX}/bin/PTXUI.exe\")" )
+#install( CODE "execute_process(COMMAND \"${windeployqt}\" \"\${CMAKE_INSTALL_PREFIX}/bin/PTXUI.exe\")" )
 
 include( CPack )
