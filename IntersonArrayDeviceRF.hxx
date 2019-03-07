@@ -357,7 +357,13 @@ public:
     PixelType *ringImageBuffer = bModeRingBuffer[ringBufferIndex]->GetPixelContainer()->GetBufferPointer();
     std::memcpy( imageBuffer, ringImageBuffer,
                  imageSize[ 0 ] * imageSize[ 1 ] * sizeof( PixelType ) );
-    return image; 
+    ImageType::Pointer curvedImage = CreateCurvedBModeImage();
+    if (true) { //if using curved array
+        
+
+        container.Build2D(imageBuffer, curvedImage->GetPixelContainer()->GetBufferPointer());
+    }
+    return curvedImage; 
     };
 
   ImageType::Pointer GetBModeImageAbsolute( int absoluteIndex )
@@ -601,6 +607,27 @@ private:
     return image;
     }
 
+  ImageType::Pointer CreateCurvedBModeImage()
+    {
+    ImageType::Pointer image = ImageType::New();
+
+    ImageType::IndexType imageIndex;
+    imageIndex.Fill( 0 );
+
+    ImageType::SizeType imageSize;
+    imageSize[ 0 ] = 512;
+    imageSize[ 1 ] = 512;
+
+    ImageType::RegionType imageRegion;
+    imageRegion.SetIndex( imageIndex );
+    imageRegion.SetSize( imageSize );
+
+    image->SetRegions( imageRegion );
+    image->Allocate();
+
+    return image;
+    }
+
   void InitalizeBModeRingBuffer()
     {
     for( unsigned int i = 0; i < bModeRingBuffer.size(); i++ )
@@ -644,8 +671,8 @@ private:
 
   ContainerType::ScanConverterError SetupScanConverter()
     {
-    int scanWidth = ContainerType::MAX_SAMPLES; //Does not matter
-    int scanHeight = height; //Does not matter
+    int scanWidth = 512; //Size of final converted image
+    int scanHeight = 512; //Size of final converted image
     if( container.GetRFData() )
       {
       scanWidth = ContainerType::MAX_RFSAMPLES;

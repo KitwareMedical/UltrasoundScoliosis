@@ -38,8 +38,7 @@ limitations under the License.
 #include <QCloseEvent>
 
 #include "IntersonArrayDeviceRF.hxx"
-#include "ui_OpticNerve.h"
-#include "OpticNerveCalculator.hxx"
+#include "ui_Scoliosis.h"
 
 //Forward declaration of Ui::MainWindow;
 namespace Ui
@@ -86,6 +85,7 @@ private:
   static void __stdcall ProbeHardButtonCallback( void *instance )
     {
     ScoliosisUI *oui = ( ScoliosisUI* )instance;
+    std::cout << "ding!" << std::endl;
     //oui->ToggleEstimation();
     };
 

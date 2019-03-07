@@ -144,10 +144,7 @@ void ScoliosisUI::UpdateImage()
     flip[1] = true;
     bmode = ITKFilterFunctions<IntersonArrayDevice::ImageType>::FlipImage(bmode , flip);
 */
-    ITKFilterFunctions< IntersonArrayDeviceRF::ImageType >::PermuteArray order;
-    order[ 0 ] = 1;
-    order[ 1 ] = 0;
-    bmode = ITKFilterFunctions< IntersonArrayDeviceRF::ImageType>::PermuteImage( bmode, order );
+    
 
     QImage image = ITKQtHelpers::GetQImageColor<IntersonArrayDeviceRF::ImageType>(
       bmode,
