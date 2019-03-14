@@ -28,6 +28,9 @@ limitations under the License.
 
 #include "ScoliosisUI.h"
 
+#include "ScoliosisServer.h"
+#include "ScoliosisQueryNN.h"
+
 #include "ITKQtHelpers.hxx"
 #include "ITKFilterFunctions.h"
 
@@ -47,8 +50,11 @@ void ScoliosisUI::closeEvent( QCloseEvent *event )
 ScoliosisUI::ScoliosisUI( int numberOfThreads, int bufferSize, QWidget *parent )
   : QMainWindow( parent ), ui( new Ui::MainWindow ),
   lastRendered( -1 ),
-  mmPerPixel( 1 )
+  mmPerPixel( 1 ), nnSocketConnection()
 {
+
+  start_server();
+  std::cout << "after end of function" << std::endl;
 
   //Setup the graphical layout on this current Widget
   ui->setupUi( this );
@@ -158,9 +164,11 @@ void ScoliosisUI::UpdateImage()
     ui->label_BModeImage->setPixmap( QPixmap::fromImage( image ) );
     ui->label_BModeImage->setScaledContents( true );
     ui->label_BModeImage->setSizePolicy( QSizePolicy::Ignored, QSizePolicy::Ignored );
+
+    std::cout << nnSocketConnection.QueryNN(bmode->GetBufferPointer()) << std::endl;
     }
-
-
+  double r = server_roll;
+  ui->label_ProbeToGround->setText(std::to_string(r).c_str());
   this->timer->start();
 }
 

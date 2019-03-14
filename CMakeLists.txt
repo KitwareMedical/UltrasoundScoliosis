@@ -86,6 +86,62 @@ include( ${ITK_USE_FILE} )
 
 find_package( Qt5 COMPONENTS Core Widgets REQUIRED )
 
+#For Scoliosis App
+option( BUILD_SCOLIOSIS ON)
+if( BUILD_SCOLIOSIS)
+  include_directories( ${SimpleWebServer_Source_DIR})
+
+
+  if(NOT MSVC)
+      add_compile_options(-std=c++11 -Wall -Wextra -Wsign-conversion)
+  else()
+      add_compile_options(/W1)
+  endif()
+
+  add_library(simple-web-server INTERFACE)
+
+  target_include_directories(simple-web-server INTERFACE ${SimpleWebServer_Source_DIR})
+
+  find_package(Threads REQUIRED)
+  target_link_libraries(simple-web-server INTERFACE ${CMAKE_THREAD_LIBS_INIT})
+
+  # TODO 2020 when Debian Jessie LTS ends:
+  # Remove Boost system, thread, regex components; use Boost::<component> aliases; remove Boost target_include_directories
+  if(USE_STANDALONE_ASIO)
+      target_compile_definitions(simple-web-server INTERFACE USE_STANDALONE_ASIO)
+      find_file(HAVE_ASIO asio.hpp)
+      if(NOT HAVE_ASIO)
+          message(FATAL_ERROR "Standalone Asio not found")
+      endif()
+  else()
+      find_package(Boost 1.69.0 COMPONENTS system date_time filesystem thread REQUIRED)
+      target_link_libraries(simple-web-server INTERFACE ${Boost_LIBRARIES})
+      target_include_directories(simple-web-server INTERFACE ${Boost_INCLUDE_DIR})
+      if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9)
+          target_compile_definitions(simple-web-server INTERFACE USE_BOOST_REGEX)
+          find_package(Boost 1.69.0 COMPONENTS regex REQUIRED)
+          target_link_libraries(simple-web-server INTERFACE ${Boost_LIBRARIES})
+          target_include_directories(simple-web-server INTERFACE ${Boost_INCLUDE_DIR})
+      endif()
+  endif()
+  if(WIN32)
+      target_link_libraries(simple-web-server INTERFACE ws2_32 wsock32)
+  endif()
+
+  if(APPLE)
+      set(OPENSSL_ROOT_DIR "/usr/local/opt/openssl")
+  endif()
+  find_package(OpenSSL)
+  if(OPENSSL_FOUND)
+      target_compile_definitions(simple-web-server INTERFACE HAVE_OPENSSL)
+      target_link_libraries(simple-web-server INTERFACE ${OPENSSL_LIBRARIES})
+      target_include_directories(simple-web-server INTERFACE ${OPENSSL_INCLUDE_DIR})
+  endif()
+
+  
+  
+endif()
+
 #Common setup
 include_directories( ${CMAKE_SOURCE_DIR} )
 include_directories( ${UltrasoundOpticNerveUI_SOURCE_DIR} )
@@ -130,7 +186,9 @@ qt5_wrap_cpp( scoliosis_source_files_moc ScoliosisUI.h )
 
 set( scoliosis_source_files
   ScoliosisDriver.cxx
+  ScoliosisServer.cxx
   ScoliosisUI.cxx
+  ScoliosisQueryNN.cxx
 )
 
 add_executable( ScoliosisUI
@@ -143,7 +201,11 @@ target_link_libraries( ScoliosisUI PUBLIC
   ${ITK_LIBRARIES}
   ${IntersonArraySDKCxx_LIBRARIES}
   Qt5::Widgets
+  simple-web-server
+  ${Boost_LIBRARIES}
 )
+
+target_include_directories(ScoliosisUI PRIVATE ${Boost_INCLUDE_DIR})
 
 install( TARGETS ScoliosisUI
   RUNTIME DESTINATION bin COMPONENT Runtime
@@ -271,8 +333,6 @@ set( windeployqt "${_dir}/windeployqt.exe" )
 if( NOT EXISTS ${windeployqt} )
   message( FATAL_ERROR "Failed to locate windeployqt executable: [${windeployqt}]" )
 endif()
-message( "THE code:")
-message( "${windeployqt}" )
 install( CODE "execute_process(COMMAND \"${windeployqt}\" \"\${CMAKE_INSTALL_PREFIX}/bin/OpticNerveUI.exe\")" )
 #install( CODE "execute_process(COMMAND \"${windeployqt}\" \"\${CMAKE_INSTALL_PREFIX}/bin/PTXUI.exe\")" )
 

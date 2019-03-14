@@ -40,6 +40,8 @@ limitations under the License.
 #include "IntersonArrayDeviceRF.hxx"
 #include "ui_Scoliosis.h"
 
+#include "ScoliosisQueryNN.h"
+
 //Forward declaration of Ui::MainWindow;
 namespace Ui
 {
@@ -70,6 +72,8 @@ protected slots:
   void UpdateImage();
 
 private:
+  NeuralNetworkSocketConnection nnSocketConnection;
+
   /** Layout for the Window */
   Ui::MainWindow *ui;
   QTimer *timer;
