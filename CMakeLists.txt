@@ -114,7 +114,7 @@ if( BUILD_SCOLIOSIS)
           message(FATAL_ERROR "Standalone Asio not found")
       endif()
   else()
-      find_package(Boost 1.69.0 COMPONENTS system date_time filesystem thread REQUIRED)
+      find_package(Boost 1.69.0 COMPONENTS system date_time thread REQUIRED)
       target_link_libraries(simple-web-server INTERFACE ${Boost_LIBRARIES})
       target_include_directories(simple-web-server INTERFACE ${Boost_INCLUDE_DIR})
       if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9)
@@ -180,93 +180,97 @@ install( TARGETS OpticNerveUI
 )
 
 #Scoliosis ui executable
+if( BUILD_SCOLIOSIS)
+  qt5_wrap_ui( ScoliosisUI_H Scoliosis.ui )
+  qt5_wrap_cpp( scoliosis_source_files_moc ScoliosisUI.h )
 
-qt5_wrap_ui( ScoliosisUI_H Scoliosis.ui )
-qt5_wrap_cpp( scoliosis_source_files_moc ScoliosisUI.h )
+  set( scoliosis_source_files
+    ScoliosisDriver.cxx
+    ScoliosisServer.cxx
+    ScoliosisUI.cxx
+    ScoliosisQueryNN.cxx
+  )
 
-set( scoliosis_source_files
-  ScoliosisDriver.cxx
-  ScoliosisServer.cxx
-  ScoliosisUI.cxx
-  ScoliosisQueryNN.cxx
-)
+  add_executable( ScoliosisUI
+    ${scoliosis_source_files}
+    ${ScoliosisUI_H}
+    ${scoliosis_source_files_moc}
+  )
 
-add_executable( ScoliosisUI
-  ${scoliosis_source_files}
-  ${ScoliosisUI_H}
-  ${scoliosis_source_files_moc}
-)
+  target_link_libraries( ScoliosisUI PUBLIC
+    ${ITK_LIBRARIES}
+    ${IntersonArraySDKCxx_LIBRARIES}
+    Qt5::Widgets
+    simple-web-server
+    ${Boost_LIBRARIES}
+  )
 
-target_link_libraries( ScoliosisUI PUBLIC
-  ${ITK_LIBRARIES}
-  ${IntersonArraySDKCxx_LIBRARIES}
-  Qt5::Widgets
-  simple-web-server
-  ${Boost_LIBRARIES}
-)
+  target_include_directories(ScoliosisUI PRIVATE ${Boost_INCLUDE_DIR})
 
-target_include_directories(ScoliosisUI PRIVATE ${Boost_INCLUDE_DIR})
+  install( TARGETS ScoliosisUI
+    RUNTIME DESTINATION bin COMPONENT Runtime
+    LIBRARY DESTINATION bin COMPONENT Runtime
+    ARCHIVE DESTINATION lib COMPONENT Development
+  )
 
-install( TARGETS ScoliosisUI
-  RUNTIME DESTINATION bin COMPONENT Runtime
-  LIBRARY DESTINATION bin COMPONENT Runtime
-  ARCHIVE DESTINATION lib COMPONENT Development
-)
+  install( FILES vertebra-lumbalis-posterior-view.png DESTINATION bin)
+endif()
 
 #Spectroscopy ui executable
 if( ${Build_Spectroscopy} )
 
-qt5_wrap_ui( SpectroscopyUI_H Spectroscopy.ui )
-qt5_wrap_cpp( spectroscopy_source_files_moc SpectroscopyUI.h )
+  qt5_wrap_ui( SpectroscopyUI_H Spectroscopy.ui )
+  qt5_wrap_cpp( spectroscopy_source_files_moc SpectroscopyUI.h )
 
-set( spectroscopy_source_files
-  SpectroscopyUIDriver.cxx
-  SpectroscopyUI.cxx
-)
+  set( spectroscopy_source_files
+    SpectroscopyUIDriver.cxx
+    SpectroscopyUI.cxx
+  )
 
-add_executable( SpectroscopyUI
-  ${spectroscopy_source_files}
-  ${SpectroscopyUI_H}
-  ${spectroscopy_source_files_moc}
-)
+  add_executable( SpectroscopyUI
+    ${spectroscopy_source_files}
+    ${SpectroscopyUI_H}
+    ${spectroscopy_source_files_moc}
+  )
 
-target_link_libraries( SpectroscopyUI PUBLIC
-  ${ITK_LIBRARIES}
-  ${IntersonArraySDKCxx_LIBRARIES}
-  Qt5::Widgets
-)
+  target_link_libraries( SpectroscopyUI PUBLIC
+    ${ITK_LIBRARIES}
+    ${IntersonArraySDKCxx_LIBRARIES}
+    Qt5::Widgets
+  )
 
-install( TARGETS SpectroscopyUI
-  RUNTIME DESTINATION bin COMPONENT Runtime
-  LIBRARY DESTINATION bin COMPONENT Runtime
-  ARCHIVE DESTINATION lib COMPONENT Development
-)
+  install( TARGETS SpectroscopyUI
+    RUNTIME DESTINATION bin COMPONENT Runtime
+    LIBRARY DESTINATION bin COMPONENT Runtime
+    ARCHIVE DESTINATION lib COMPONENT Development
+  )
 
-qt5_wrap_ui( SpectroscopyBModeUI_H SpectroscopyBMode.ui )
-qt5_wrap_cpp( spectroscopyBMode_source_files_moc SpectroscopyBModeUI.h )
 
-set( spectroscopyBMode_source_files
-  SpectroscopyBModeUIDriver.cxx
-  SpectroscopyBModeUI.cxx
-)
+  qt5_wrap_ui( SpectroscopyBModeUI_H SpectroscopyBMode.ui )
+  qt5_wrap_cpp( spectroscopyBMode_source_files_moc SpectroscopyBModeUI.h )
 
-add_executable( SpectroscopyBModeUI
-  ${spectroscopyBMode_source_files}
-  ${SpectroscopyBModeUI_H}
-  ${spectroscopyBMode_source_files_moc}
-)
+  set( spectroscopyBMode_source_files
+    SpectroscopyBModeUIDriver.cxx
+    SpectroscopyBModeUI.cxx
+  )
 
-target_link_libraries( SpectroscopyBModeUI PUBLIC
-  ${ITK_LIBRARIES}
-  ${IntersonArraySDKCxx_LIBRARIES}
-  Qt5::Widgets
-)
+  add_executable( SpectroscopyBModeUI
+    ${spectroscopyBMode_source_files}
+    ${SpectroscopyBModeUI_H}
+    ${spectroscopyBMode_source_files_moc}
+  )
 
-install( TARGETS SpectroscopyBModeUI
-  RUNTIME DESTINATION bin COMPONENT Runtime
-  LIBRARY DESTINATION bin COMPONENT Runtime
-  ARCHIVE DESTINATION lib COMPONENT Development
-)
+  target_link_libraries( SpectroscopyBModeUI PUBLIC
+    ${ITK_LIBRARIES}
+    ${IntersonArraySDKCxx_LIBRARIES}
+    Qt5::Widgets
+  )
+
+  install( TARGETS SpectroscopyBModeUI
+    RUNTIME DESTINATION bin COMPONENT Runtime
+    LIBRARY DESTINATION bin COMPONENT Runtime
+    ARCHIVE DESTINATION lib COMPONENT Development
+  )
 
 endif()
 
@@ -274,35 +278,35 @@ endif()
 #PTX ui executable
 if( ${Build_PTX} )
 
-#qt5_wrap_ui( PTXUI_H PTX.ui )
-qt5_wrap_cpp( ptx_source_files_moc1 PTXUISaveDialog.h )
-qt5_wrap_cpp( ptx_source_files_moc2 PTXUI.h )
+  #qt5_wrap_ui( PTXUI_H PTX.ui )
+  qt5_wrap_cpp( ptx_source_files_moc1 PTXUISaveDialog.h )
+  qt5_wrap_cpp( ptx_source_files_moc2 PTXUI.h )
 
-set( ptx_source_files
-  PTXPatientData.h
-  PTXUISaveDialog.cxx
-  PTXDriver.cxx
-  PTXUI.cxx
-)
+  set( ptx_source_files
+    PTXPatientData.h
+    PTXUISaveDialog.cxx
+    PTXDriver.cxx
+    PTXUI.cxx
+  )
 
-add_executable( PTXUI 
-  ${ptx_source_files}
- # ${PTXUI_H}
-  ${ptx_source_files_moc1}
-  ${ptx_source_files_moc2}
-)
+  add_executable( PTXUI 
+    ${ptx_source_files}
+   # ${PTXUI_H}
+    ${ptx_source_files_moc1}
+    ${ptx_source_files_moc2}
+  )
 
-target_link_libraries( PTXUI PUBLIC
-  ${ITK_LIBRARIES}
-  ${IntersonArraySDKCxx_LIBRARIES}
-  Qt5::Widgets
-)
+  target_link_libraries( PTXUI PUBLIC
+    ${ITK_LIBRARIES}
+    ${IntersonArraySDKCxx_LIBRARIES}
+    Qt5::Widgets
+  )
 
-install( TARGETS PTXUI 
-  RUNTIME DESTINATION bin COMPONENT Runtime
-  LIBRARY DESTINATION bin COMPONENT Runtime
-  ARCHIVE DESTINATION lib COMPONENT Development
-)
+  install( TARGETS PTXUI 
+    RUNTIME DESTINATION bin COMPONENT Runtime
+    LIBRARY DESTINATION bin COMPONENT Runtime
+    ARCHIVE DESTINATION lib COMPONENT Development
+  )
 
 endif()
 

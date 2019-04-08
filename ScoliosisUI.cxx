@@ -165,7 +165,9 @@ void ScoliosisUI::UpdateImage()
     ui->label_BModeImage->setScaledContents( true );
     ui->label_BModeImage->setSizePolicy( QSizePolicy::Ignored, QSizePolicy::Ignored );
 
-    std::cout << nnSocketConnection.QueryNN(bmode->GetBufferPointer()) << std::endl;
+    float theta = nnSocketConnection.QueryNN(bmode->GetBufferPointer());
+
+    ui->label_estimateCurrent->setText(std::to_string(theta).c_str());
     }
   double r = server_roll;
   ui->label_ProbeToGround->setText(std::to_string(r).c_str());
