@@ -4,13 +4,18 @@
 
 using boost::asio::ip::tcp;
 
-
+struct NetworkResponse {
+    float angleInRadians;
+    float stdDevInRadians;
+};
 
 class NeuralNetworkSocketConnection {
 public:
     NeuralNetworkSocketConnection();
-    double QueryNN(unsigned char * image);
+    bool Connect();
+    NetworkResponse QueryNN(unsigned char * image);
 private:
+    bool connected;
     boost::asio::io_context io_context;
     tcp::socket m_socket;
 };

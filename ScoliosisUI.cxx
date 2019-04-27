@@ -1,4 +1,4 @@
-/*=========================================================================
+﻿/*=========================================================================
 
 Library:   UltrasoundSpectroscopyRecorder
 
@@ -33,9 +33,15 @@ limitations under the License.
 
 #include "ITKQtHelpers.hxx"
 #include "ITKFilterFunctions.h"
+#include "itkTileImageFilter.h"
+#include "itkImageFileWriter.h"
 
 #include <sstream>
 #include <iomanip>
+#include <string>
+#include <time.h> 
+
+
 
 
 void ScoliosisUI::closeEvent( QCloseEvent *event )
@@ -71,6 +77,13 @@ ScoliosisUI::ScoliosisUI( int numberOfThreads, int bufferSize, QWidget *parent )
   //connect( ui->checkBox_doubler, SIGNAL( stateChanged(int) ), this,
   //         SLOT( SetDoubler() ) );
 
+  connect(ui->generateIdentifierButton, 
+	SIGNAL(clicked()), this, SLOT(SetPatientID()));
+  connect(ui->recordButton,
+	  SIGNAL(clicked()), this, SLOT(Record()));
+  connect(ui->stopButton,
+	  SIGNAL(clicked()), this, SLOT(StopRecording()));
+
 
 
   intersonDevice.SetRingBufferSize( bufferSize );
@@ -87,6 +100,16 @@ ScoliosisUI::ScoliosisUI( int numberOfThreads, int bufferSize, QWidget *parent )
   this->timer->setSingleShot( true );
   this->timer->setInterval( 50 );
   this->connect( timer, SIGNAL( timeout() ), SLOT( UpdateImage() ) );
+
+  this->updateConnectionUIsTimer = new QTimer(this);
+  this->updateConnectionUIsTimer->setSingleShot(false);
+
+  this->updateConnectionUIsTimer->setInterval(2000);
+  this->connect(updateConnectionUIsTimer, SIGNAL ( timeout () ) , SLOT( UpdateConnectionUIs() ));
+  this->updateConnectionUIsTimer->start();
+
+  srand(time(NULL)); //for random patient IDs
+  this->SetPatientID();
 }
 
 ScoliosisUI::~ScoliosisUI()
@@ -131,7 +154,75 @@ void ScoliosisUI::ConnectProbe()
     //TODO: Show UI message
     }
 
+  this->USConnected = true;
+
+  this->ui->l_probeConnected->setText("Probe Connected");
+
   this->timer->start();
+}
+
+void ScoliosisUI::Record() {
+	if (this->state == WaitingToRecord) {
+		this->state = Recording;
+		std::cout << "Recording" << std::endl;
+
+	}
+}
+void ScoliosisUI::StopRecording() {
+
+	if (this->state == Recording) {
+		this->state = WritingToDisk;
+
+		typedef itk::Image<IntersonArrayDeviceRF::ImageType::PixelType, 3> StackedImageType;
+
+		typedef itk::TileImageFilter<IntersonArrayDeviceRF::ImageType, StackedImageType> FilterType;
+
+		auto tiler = FilterType::New();
+		itk::FixedArray< unsigned int, 3> layout;
+
+		layout[0] = 1;
+		layout[1] = 1;
+		layout[2] = 0;
+
+		tiler->SetLayout(layout);
+
+		for (int i = 0; i < this->savedImages.size(); i++) {
+			std::cerr << i << std::endl;
+			tiler->SetInput(i, savedImages[i]);
+		}
+		IntersonArrayDeviceRF::ImageType::PixelType filler = 0;
+		tiler->SetDefaultPixelValue(filler);
+
+		tiler->Update();
+		
+		typedef itk::ImageFileWriter<StackedImageType> WriterType;
+
+		auto writer = WriterType::New();
+
+		writer->SetInput(tiler->GetOutput());
+		writer->SetFileName("data\\" + this->patientID + "_" + std::to_string(++ this->scan_count) +  ".nrrd");
+
+		writer->Update();
+
+		this->savedImages.clear();
+		this->state = WaitingToRecord;
+	}
+}
+
+
+
+void ScoliosisUI::SetPatientID() {
+	if (this->state == WaitingToRecord) {
+		this->patientID = "------";
+		
+		for (int j = 0; j < 3; j++) {
+			patientID[j] = rand() % 26 + 65;
+			patientID[j + 3] = rand() % 10 + 48;
+		}
+
+		ui->lineEdit->setText(QString(this->patientID.c_str()));
+		this->scan_count = 0;
+	}
 }
 
 void ScoliosisUI::UpdateImage()
@@ -144,14 +235,6 @@ void ScoliosisUI::UpdateImage()
     IntersonArrayDeviceRF::ImageType::Pointer bmode =
       intersonDevice.GetBModeImage( currentIndex );
 
-/*
-    ITKFilterFunctions<IntersonArrayDevice::ImageType>::FlipArray flip;
-    flip[0] = false;
-    flip[1] = true;
-    bmode = ITKFilterFunctions<IntersonArrayDevice::ImageType>::FlipImage(bmode , flip);
-*/
-    
-
     QImage image = ITKQtHelpers::GetQImageColor<IntersonArrayDeviceRF::ImageType>(
       bmode,
       bmode->GetLargestPossibleRegion(),
@@ -161,19 +244,43 @@ void ScoliosisUI::UpdateImage()
 #ifdef DEBUG_PRINT
    // std::cout << "Setting Pixmap " << currentIndex << std::endl;
 #endif
+
     ui->label_BModeImage->setPixmap( QPixmap::fromImage( image ) );
     ui->label_BModeImage->setScaledContents( true );
     ui->label_BModeImage->setSizePolicy( QSizePolicy::Ignored, QSizePolicy::Ignored );
 
-    float theta = nnSocketConnection.QueryNN(bmode->GetBufferPointer());
+	if (this->NNConnected) {
+		NetworkResponse resp = nnSocketConnection.QueryNN(bmode->GetBufferPointer());
+		float theta = resp.angleInRadians;
 
-    ui->label_estimateCurrent->setText(std::to_string(theta).c_str());
-    }
+		ui->label_estimateCurrent->setText((std::to_string(theta) + " " + std::to_string(resp.stdDevInRadians)).c_str());
+	}
+	if (this->state == Recording) {
+		this->savedImages.push_back(bmode);
+	}
+	
+  }
   double r = server_roll;
   ui->label_ProbeToGround->setText(std::to_string(r).c_str());
   this->timer->start();
 }
 
+void ScoliosisUI::UpdateConnectionUIs() {
+	if (!this->NNConnected) {
+		this->NNConnected = this->nnSocketConnection.Connect();
+		if (this->NNConnected) {
+			ui->l_nnConnected->setText("Neural Network Connected");
+		}
+	}
+
+	//todo server
+
+	//todo us_probe
+
+	if (NNConnected && USConnected && phoneConnected && this->state == WaitingForInitialization) {
+		this->state = WaitingToRecord;
+	}
+}
 
 void ScoliosisUI::SetFrequency()
 {

@@ -42,11 +42,15 @@ limitations under the License.
 
 #include "ScoliosisQueryNN.h"
 
+#include "itkImageDuplicator.h"
+
 //Forward declaration of Ui::MainWindow;
 namespace Ui
 {
   class MainWindow;
 }
+
+enum ProgramState { WaitingForInitialization, Recording, WaitingToRecord, WritingToDisk};
 
   //Declaration of OpticNerveUI
 class ScoliosisUI : public QMainWindow
@@ -60,6 +64,8 @@ public:
 protected:
   void  closeEvent( QCloseEvent * event );
 
+
+
 protected slots:
     /** Quit the application */
   void ConnectProbe();
@@ -67,24 +73,41 @@ protected slots:
   void SetFrequency();
   void SetDepth();
   void SetDoubler();
+  void SetPatientID();
+
+  void Record();
+  void StopRecording();
 
   /** Update the images displayed from the probe */
   void UpdateImage();
 
+  void UpdateConnectionUIs();
+
 private:
   NeuralNetworkSocketConnection nnSocketConnection;
+
+  ProgramState state = WaitingForInitialization;
+  bool NNConnected = false, USConnected = false, phoneConnected=true;
 
   /** Layout for the Window */
   Ui::MainWindow *ui;
   QTimer *timer;
 
   QTimer *processing;
+  
+  QTimer *updateConnectionUIsTimer;
 
   IntersonArrayDeviceRF intersonDevice;
   float mmPerPixel;
 
 
   int lastRendered;
+
+  std::string patientID;
+  int scan_count;
+  itk::ImageDuplicator<IntersonArrayDeviceRF::ImageType>::Pointer duplicator 
+    = itk::ImageDuplicator<IntersonArrayDeviceRF::ImageType>::New();
+  std::vector<IntersonArrayDeviceRF::ImageType::Pointer> savedImages;
 
   static void __stdcall ProbeHardButtonCallback( void *instance )
     {
@@ -95,4 +118,4 @@ private:
 
 };
 
-#endif
+#endif SCOLIOSISUI_H
