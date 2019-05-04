@@ -37,6 +37,12 @@ limitations under the License.
 #include <qgroupbox.h>
 #include <QCloseEvent>
 
+
+#define BOOST_SPIRIT_THREADSAFE
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
+
+
 #include "IntersonArrayDeviceRF.hxx"
 #include "ui_Scoliosis.h"
 
@@ -86,6 +92,8 @@ protected slots:
 private:
   NeuralNetworkSocketConnection nnSocketConnection;
 
+  
+
   ProgramState state = WaitingForInitialization;
   bool NNConnected = false, USConnected = false, phoneConnected=true;
 
@@ -108,6 +116,7 @@ private:
   itk::ImageDuplicator<IntersonArrayDeviceRF::ImageType>::Pointer duplicator 
     = itk::ImageDuplicator<IntersonArrayDeviceRF::ImageType>::New();
   std::vector<IntersonArrayDeviceRF::ImageType::Pointer> savedImages;
+  boost::property_tree::ptree scan_metadata;
 
   static void __stdcall ProbeHardButtonCallback( void *instance )
     {

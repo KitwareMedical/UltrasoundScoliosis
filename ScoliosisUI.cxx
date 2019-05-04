@@ -42,6 +42,9 @@ limitations under the License.
 #include <time.h> 
 
 
+#define BOOST_SPIRIT_THREADSAFE
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
 
 
 void ScoliosisUI::closeEvent( QCloseEvent *event )
@@ -60,7 +63,6 @@ ScoliosisUI::ScoliosisUI( int numberOfThreads, int bufferSize, QWidget *parent )
 {
 
   start_server();
-  std::cout << "after end of function" << std::endl;
 
   //Setup the graphical layout on this current Widget
   ui->setupUi( this );
@@ -156,6 +158,10 @@ void ScoliosisUI::ConnectProbe()
 
   this->USConnected = true;
 
+  this->ui->dropDown_Frequency->setCurrentIndex(1);
+  this->SetFrequency();
+  this->SetDepth();
+
   this->ui->l_probeConnected->setText("Probe Connected");
 
   this->timer->start();
@@ -163,6 +169,12 @@ void ScoliosisUI::ConnectProbe()
 
 void ScoliosisUI::Record() {
 	if (this->state == WaitingToRecord) {
+		this->scan_metadata.put("frequency", this->ui->dropDown_Frequency->currentIndex());
+		this->scan_metadata.put("depth", this->ui->spinBox_Depth->value());
+
+		boost::property_tree::ptree frame_metadata;
+		this->scan_metadata.add_child("frame_metadata", frame_metadata);
+
 		this->state = Recording;
 		std::cout << "Recording" << std::endl;
 
@@ -205,6 +217,10 @@ void ScoliosisUI::StopRecording() {
 		writer->Update();
 
 		this->savedImages.clear();
+
+		boost::property_tree::write_json("data\\" + this->patientID + "_" + std::to_string(this->scan_count) + ".json", this->scan_metadata);
+		this->scan_metadata.clear();
+
 		this->state = WaitingToRecord;
 	}
 }
@@ -248,15 +264,23 @@ void ScoliosisUI::UpdateImage()
     ui->label_BModeImage->setPixmap( QPixmap::fromImage( image ) );
     ui->label_BModeImage->setScaledContents( true );
     ui->label_BModeImage->setSizePolicy( QSizePolicy::Ignored, QSizePolicy::Ignored );
-
+	float theta, quality;
 	if (this->NNConnected) {
 		NetworkResponse resp = nnSocketConnection.QueryNN(bmode->GetBufferPointer());
-		float theta = resp.angleInRadians;
+		theta = resp.angleInRadians;
 
-		ui->label_estimateCurrent->setText((std::to_string(theta) + " " + std::to_string(resp.stdDevInRadians)).c_str());
+		ui->label_estimateCurrent->setText((std::to_string(theta) + " " + std::to_string((int)(100 * resp.stdDevInRadians / 8))).c_str());
+		ui->imageQuality->setValue((int)(100 * resp.stdDevInRadians / 8));
+		quality = resp.stdDevInRadians;
 	}
 	if (this->state == Recording) {
 		this->savedImages.push_back(bmode);
+
+		boost::property_tree::ptree frame;
+		frame.put("accelerometer_angle", server_roll);
+		frame.put("nn_angle", theta);
+		frame.put("nn_quality", quality);
+		this->scan_metadata.get_child("frame_metadata").push_back(std::make_pair("", frame));
 	}
 	
   }

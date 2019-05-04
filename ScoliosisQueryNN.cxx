@@ -17,7 +17,7 @@ bool NeuralNetworkSocketConnection::Connect() {
 	try
 	{
 		tcp::resolver resolver(io_context);
-		boost::asio::connect(m_socket, resolver.resolve("hastings-alien.local", "9999"));
+		boost::asio::connect(m_socket, resolver.resolve("localhost", "9999"));
 		connected = true;
 		return true;
 	} 

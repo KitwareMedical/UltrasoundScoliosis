@@ -1,7 +1,7 @@
 #include "server_http.hpp"
 #include "ScoliosisServer.h"
 
-// Added for the json-example
+
 #define BOOST_SPIRIT_THREADSAFE
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
