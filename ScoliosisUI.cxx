@@ -169,6 +169,9 @@ void ScoliosisUI::ConnectProbe()
 
 void ScoliosisUI::Record() {
 	if (this->state == WaitingToRecord) {
+		this->ui->generateIdentifierButton->setEnabled(false);
+		this->ui->stopButton->setEnabled(true);
+		this->ui->recordButton->setEnabled(false);
 		this->scan_metadata.put("frequency", this->ui->dropDown_Frequency->currentIndex());
 		this->scan_metadata.put("depth", this->ui->spinBox_Depth->value());
 
@@ -183,6 +186,9 @@ void ScoliosisUI::Record() {
 void ScoliosisUI::StopRecording() {
 
 	if (this->state == Recording) {
+		this->ui->generateIdentifierButton->setEnabled(true);
+		this->ui->stopButton->setEnabled(false);
+		this->ui->recordButton->setEnabled(true);
 		this->state = WritingToDisk;
 
 		typedef itk::Image<IntersonArrayDeviceRF::ImageType::PixelType, 3> StackedImageType;
@@ -228,6 +234,10 @@ void ScoliosisUI::StopRecording() {
 
 
 void ScoliosisUI::SetPatientID() {
+	if (this->state == WaitingToGenerateIdentifier) {
+		this->state = WaitingToRecord;
+		this->ui->recordButton->setEnabled(true);
+	}
 	if (this->state == WaitingToRecord) {
 		this->patientID = "------";
 		
@@ -269,9 +279,9 @@ void ScoliosisUI::UpdateImage()
 		NetworkResponse resp = nnSocketConnection.QueryNN(bmode->GetBufferPointer());
 		theta = resp.angleInRadians;
 
-		ui->label_estimateCurrent->setText((std::to_string(theta) + " " + std::to_string((int)(100 * resp.stdDevInRadians / 8))).c_str());
-		ui->imageQuality->setValue((int)(100 * resp.stdDevInRadians / 8));
-		quality = resp.stdDevInRadians;
+		ui->label_estimateCurrent->setText((std::to_string(theta) + " " + std::to_string((int)(100 * resp.maxOfPDF / 8))).c_str());
+		ui->imageQuality->setValue((int)(100 * resp.maxOfPDF / 8));
+		quality = resp.maxOfPDF;
 	}
 	if (this->state == Recording) {
 		this->savedImages.push_back(bmode);
@@ -281,7 +291,13 @@ void ScoliosisUI::UpdateImage()
 		frame.put("nn_angle", theta);
 		frame.put("nn_quality", quality);
 		this->scan_metadata.get_child("frame_metadata").push_back(std::make_pair("", frame));
+
+		
 	}
+	//sorry it's 1 AM
+	int secs = this->savedImages.size() / 15;
+	ui->label_7->setText((std::to_string(secs / 60) + ":" + (secs % 60 < 10 ? "0" : "") + std::to_string(secs % 60)).c_str());
+	//</sorry>
 	
   }
   double r = server_roll;
@@ -296,13 +312,15 @@ void ScoliosisUI::UpdateConnectionUIs() {
 			ui->l_nnConnected->setText("Neural Network Connected");
 		}
 	}
+	if (server_roll != 0) { //Fixme
+		phoneConnected = true;
+		ui->l_phoneConnected->setText("Phone Connected");
+	}
 
-	//todo server
-
-	//todo us_probe
 
 	if (NNConnected && USConnected && phoneConnected && this->state == WaitingForInitialization) {
-		this->state = WaitingToRecord;
+		this->state = WaitingToGenerateIdentifier;
+		this->ui->generateIdentifierButton->setEnabled(true);
 	}
 }
 

@@ -6,7 +6,7 @@ using boost::asio::ip::tcp;
 
 struct NetworkResponse {
     float angleInRadians;
-    float stdDevInRadians;
+    float maxOfPDF;
 };
 
 class NeuralNetworkSocketConnection {

@@ -56,7 +56,7 @@ namespace Ui
   class MainWindow;
 }
 
-enum ProgramState { WaitingForInitialization, Recording, WaitingToRecord, WritingToDisk};
+enum ProgramState { WaitingForInitialization, WaitingToGenerateIdentifier, Recording, WaitingToRecord, WritingToDisk};
 
   //Declaration of OpticNerveUI
 class ScoliosisUI : public QMainWindow
@@ -95,7 +95,7 @@ private:
   
 
   ProgramState state = WaitingForInitialization;
-  bool NNConnected = false, USConnected = false, phoneConnected=true;
+  bool NNConnected = false, USConnected = false, phoneConnected=false;
 
   /** Layout for the Window */
   Ui::MainWindow *ui;

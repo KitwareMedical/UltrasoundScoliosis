@@ -180,7 +180,7 @@ install( TARGETS OpticNerveUI
 )
 
 #Scoliosis ui executable
-if( BUILD_SCOLIOSIS)
+if( BUILD_SCOLIOSIS )
   qt5_wrap_ui( ScoliosisUI_H Scoliosis.ui )
   qt5_wrap_cpp( scoliosis_source_files_moc ScoliosisUI.h )
 
@@ -214,6 +214,35 @@ if( BUILD_SCOLIOSIS)
   )
 
   install( FILES vertebra-lumbalis-posterior-view.png DESTINATION bin)
+endif()
+
+#MeasurementExplorer ui executable
+if( BUILD_MEASUREMENTEXPLORER )
+  qt5_wrap_ui( MeasurementExplorerUI_H MeasurementExplorer.ui )
+  qt5_wrap_cpp( MeasurementExplorer_source_files_moc MeasurementExplorerUI.h )
+
+  set( scoliosis_source_files
+    MeasurementExplorerDriver.cxx
+    MeasurementExplorerUI.cxx
+  )
+
+  add_executable( MeasurementExplorerUI
+    ${MeasurementExplorer_source_files}
+    ${MeasurementExplorerUI_H}
+    ${MeasurementExplorer_source_files_moc}
+  )
+
+  target_link_libraries( MeasurementExplorerUI PUBLIC
+    ${ITK_LIBRARIES}
+    ${IntersonArraySDKCxx_LIBRARIES}
+    Qt5::Widgets
+  )
+
+  install( TARGETS ScoliosisUI
+    RUNTIME DESTINATION bin COMPONENT Runtime
+    LIBRARY DESTINATION bin COMPONENT Runtime
+    ARCHIVE DESTINATION lib COMPONENT Development
+  )
 endif()
 
 #Spectroscopy ui executable

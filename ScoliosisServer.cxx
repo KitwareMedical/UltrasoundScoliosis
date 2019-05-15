@@ -15,7 +15,7 @@ using HttpServer = SimpleWeb::Server<SimpleWeb::HTTP>;
 
 HttpServer server;
 
-double server_roll;
+double server_roll = 0;
 
 int start_server() {
   server.config.port = 80;
