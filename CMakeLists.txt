@@ -26,6 +26,7 @@ project( UltrasoundIntersonApps CXX )
 
 option( Build_Spectroscopy ON )
 option( Build_PTX ON )
+option( BUILD_MEASUREMENTEXPLORER ON )
 
 #Required packages and libraries
 find_package( IntersonArraySDKCxx REQUIRED )
@@ -219,11 +220,12 @@ endif()
 #MeasurementExplorer ui executable
 if( BUILD_MEASUREMENTEXPLORER )
   qt5_wrap_ui( MeasurementExplorerUI_H MeasurementExplorer.ui )
-  qt5_wrap_cpp( MeasurementExplorer_source_files_moc MeasurementExplorerUI.h )
+  qt5_wrap_cpp( MeasurementExplorer_source_files_moc MeasurementExplorerUI.h ClickableUltrasound.h)
 
-  set( scoliosis_source_files
+  set( MeasurementExplorer_source_files
     MeasurementExplorerDriver.cxx
     MeasurementExplorerUI.cxx
+	ClickableUltrasound.cxx
   )
 
   add_executable( MeasurementExplorerUI
@@ -238,7 +240,7 @@ if( BUILD_MEASUREMENTEXPLORER )
     Qt5::Widgets
   )
 
-  install( TARGETS ScoliosisUI
+  install( TARGETS MeasurementExplorerUI
     RUNTIME DESTINATION bin COMPONENT Runtime
     LIBRARY DESTINATION bin COMPONENT Runtime
     ARCHIVE DESTINATION lib COMPONENT Development

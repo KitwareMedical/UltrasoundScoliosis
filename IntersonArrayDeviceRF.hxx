@@ -366,6 +366,13 @@ public:
     return curvedImage; 
     };
 
+  ImageType::Pointer Build2D(ImageType::Pointer bmode){
+    ImageType::Pointer curvedImage = CreateCurvedBModeImage();
+    PixelType *inputImageBuffer = bmode->GetPixelContainer()->GetBufferPointer();
+
+    container.Build2D(inputImageBuffer, curvedImage->GetPixelContainer()->GetBufferPointer());
+  }
+
   ImageType::Pointer GetBModeImageAbsolute( int absoluteIndex )
     {
     return GetBModeImage( absoluteIndex % bModeRingBuffer.size() );
