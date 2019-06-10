@@ -36,7 +36,7 @@ find_package( IntersonArraySDKCxx REQUIRED )
 
 find_package( ITK REQUIRED )
 
-if( ${Build_Spectroscopy} )
+if( ${Build_Spectroscopy} OR ${BUILD_MEASUREMENTEXPLORER})
 find_package( ITK COMPONENTS
   Ultrasound
   ITKBinaryMathematicalMorphology
@@ -225,7 +225,8 @@ if( BUILD_MEASUREMENTEXPLORER )
   set( MeasurementExplorer_source_files
     MeasurementExplorerDriver.cxx
     MeasurementExplorerUI.cxx
-	ClickableUltrasound.cxx
+    MeasurementWindow.cxx
+	 ClickableUltrasound.cxx
   )
 
   add_executable( MeasurementExplorerUI

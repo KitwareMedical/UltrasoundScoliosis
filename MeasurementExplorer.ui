@@ -306,45 +306,313 @@
        <number>0</number>
       </property>
       <item>
-       <layout class="QGridLayout" name="gridLayout_6">
-        <property name="leftMargin">
-         <number>5</number>
+       <widget class="QFrame" name="frame">
+        <property name="minimumSize">
+         <size>
+          <width>200</width>
+          <height>100</height>
+         </size>
         </property>
-        <property name="topMargin">
-         <number>5</number>
+        <property name="autoFillBackground">
+         <bool>false</bool>
         </property>
-        <property name="rightMargin">
-         <number>5</number>
+        <property name="styleSheet">
+         <string notr="true">QFrame { border: 2px solid red } 
+QLabel {border: 0px solid black}</string>
         </property>
-        <item row="0" column="0">
-         <widget class="QLabel" name="label_4">
-          <property name="text">
-           <string>x:</string>
+        <property name="frameShape">
+         <enum>QFrame::Panel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Raised</enum>
+        </property>
+        <widget class="QWidget" name="layoutWidget">
+         <property name="geometry">
+          <rect>
+           <x>0</x>
+           <y>10</y>
+           <width>200</width>
+           <height>76</height>
+          </rect>
+         </property>
+         <layout class="QGridLayout" name="measurement_window_0">
+          <property name="sizeConstraint">
+           <enum>QLayout::SetMaximumSize</enum>
           </property>
-         </widget>
-        </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="label">
-          <property name="text">
-           <string>intensity:</string>
+          <property name="leftMargin">
+           <number>5</number>
           </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QLabel" name="label_3">
-          <property name="text">
-           <string>TextLabel</string>
+          <property name="topMargin">
+           <number>5</number>
           </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <widget class="QLabel" name="label_intensity">
-          <property name="text">
-           <string>TextLabel</string>
+          <property name="rightMargin">
+           <number>5</number>
           </property>
-         </widget>
-        </item>
-       </layout>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label">
+            <property name="text">
+             <string>intensity:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_4">
+            <property name="text">
+             <string>stddev:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLabel" name="label_3">
+            <property name="text">
+             <string>TextLabel</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QLabel" name="label_intensity">
+            <property name="text">
+             <string>TextLabel</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="label_9">
+            <property name="text">
+             <string>attenuation:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QLabel" name="label_10">
+            <property name="text">
+             <string>TextLabel</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLabel" name="label_8">
+            <property name="text">
+             <string>TextLable</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_5">
+            <property name="text">
+             <string>backscatter:</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </widget>
+      </item>
+      <item>
+       <widget class="QFrame" name="frame">
+        <property name="minimumSize">
+         <size>
+          <width>200</width>
+          <height>100</height>
+         </size>
+        </property>
+        <property name="autoFillBackground">
+         <bool>false</bool>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QFrame { border: 2px solid green } 
+QLabel {border: 0px solid black}</string>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::Panel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Raised</enum>
+        </property>
+        <widget class="QWidget" name="layoutWidget">
+         <property name="geometry">
+          <rect>
+           <x>0</x>
+           <y>10</y>
+           <width>200</width>
+           <height>76</height>
+          </rect>
+         </property>
+         <layout class="QGridLayout" name="measurement_window_2">
+          <property name="sizeConstraint">
+           <enum>QLayout::SetMaximumSize</enum>
+          </property>
+          <property name="leftMargin">
+           <number>5</number>
+          </property>
+          <property name="topMargin">
+           <number>5</number>
+          </property>
+          <property name="rightMargin">
+           <number>5</number>
+          </property>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label">
+            <property name="text">
+             <string>intensity:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_4">
+            <property name="text">
+             <string>stddev:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLabel" name="label_3">
+            <property name="text">
+             <string>TextLabel</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QLabel" name="label_intensity">
+            <property name="text">
+             <string>TextLabel</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="label_9">
+            <property name="text">
+             <string>attenuation:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QLabel" name="label_10">
+            <property name="text">
+             <string>TextLabel</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLabel" name="label_8">
+            <property name="text">
+             <string>TextLable</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_5">
+            <property name="text">
+             <string>backscatter:</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </widget>
+      </item>
+      <item>
+       <widget class="QFrame" name="frame">
+        <property name="minimumSize">
+         <size>
+          <width>200</width>
+          <height>100</height>
+         </size>
+        </property>
+        <property name="autoFillBackground">
+         <bool>false</bool>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QFrame { border: 2px solid blue } 
+QLabel {border: 0px solid black}</string>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::Panel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Raised</enum>
+        </property>
+        <widget class="QWidget" name="layoutWidget">
+         <property name="geometry">
+          <rect>
+           <x>0</x>
+           <y>10</y>
+           <width>200</width>
+           <height>76</height>
+          </rect>
+         </property>
+         <layout class="QGridLayout" name="measurement_window_3">
+          <property name="sizeConstraint">
+           <enum>QLayout::SetMaximumSize</enum>
+          </property>
+          <property name="leftMargin">
+           <number>5</number>
+          </property>
+          <property name="topMargin">
+           <number>5</number>
+          </property>
+          <property name="rightMargin">
+           <number>5</number>
+          </property>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label">
+            <property name="text">
+             <string>intensity:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_4">
+            <property name="text">
+             <string>stddev:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLabel" name="label_3">
+            <property name="text">
+             <string>TextLabel</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QLabel" name="label_intensity">
+            <property name="text">
+             <string>TextLabel</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="label_9">
+            <property name="text">
+             <string>attenuation:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QLabel" name="label_10">
+            <property name="text">
+             <string>TextLabel</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLabel" name="label_8">
+            <property name="text">
+             <string>TextLable</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_5">
+            <property name="text">
+             <string>backscatter:</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </widget>
       </item>
       <item>
        <spacer name="verticalSpacer_2">
@@ -417,9 +685,8 @@
        </property>
        <layout class="QHBoxLayout" name="horizontalLayout"/>
       </widget>
-      <zorder>label_BModeImage</zorder>
       <zorder>horizontalLayoutWidget</zorder>
-      <zorder></zorder>
+      <zorder>label_BModeImage</zorder>
      </widget>
     </item>
    </layout>

@@ -371,6 +371,7 @@ public:
     PixelType *inputImageBuffer = bmode->GetPixelContainer()->GetBufferPointer();
 
     container.Build2D(inputImageBuffer, curvedImage->GetPixelContainer()->GetBufferPointer());
+	return curvedImage;
   }
 
   ImageType::Pointer GetBModeImageAbsolute( int absoluteIndex )
@@ -678,8 +679,14 @@ private:
 
   ContainerType::ScanConverterError SetupScanConverter()
     {
-    int scanWidth = 512; //Size of final converted image
-    int scanHeight = 512; //Size of final converted image
+//    int scanWidth = 512; //Size of final converted image
+//    int scanHeight = 512; //Size of final converted image
+
+    int scanWidth = ContainerType::MAX_SAMPLES; //Does not matter
+    int scanHeight = height; //Does not matter
+
+    std::cout << "rdata" << container.GetRFData() << std::endl;
+
     if( container.GetRFData() )
       {
       scanWidth = ContainerType::MAX_RFSAMPLES;

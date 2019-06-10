@@ -37,9 +37,15 @@ limitations under the License.
 #include <qgroupbox.h>
 #include <QCloseEvent>
 
+#include "itkButterworthBandpass1DFilterFunction.h"
+#include "itkRescaleIntensityImageFilter.h"
+#include "itkComposeImageFilter.h"
+#include "itkBModeImageFilter.h"
+#include "itkCastImageFilter.h"
 
 #include "IntersonArrayDeviceRF.hxx"
 #include "ui_MeasurementExplorer.h"
+#include "MeasurementWindow.h"
 
 //Forward declaration of Ui::MainWindow;
 namespace Ui
@@ -47,7 +53,8 @@ namespace Ui
   class MainWindow;
 }
 
-  //Declaration of OpticNerveUI
+
+  //Declaration of MeasurementUI
 class MeasurementExplorerUI : public QMainWindow
 {
   Q_OBJECT
@@ -70,7 +77,6 @@ protected slots:
   void SetFrequency();
   void SetDepth();
   void SetDoubler();
-  void SetPatientID();
 
   void Record();
   void StopRecording();
@@ -87,15 +93,41 @@ private:
   QTimer *timer;
 
   QTimer *processing;
-
-  std::string patientID;
   
 
   IntersonArrayDeviceRF intersonDevice;
   float mmPerPixel;
+  typedef itk::Image<double, 2> ImageType;
+  typedef IntersonArrayDeviceRF::RFImageType  RFImageType;
+
+  //BMode filtering
+  typedef itk::CastImageFilter<RFImageType, ImageType> CastFilter;
+  CastFilter::Pointer m_CastFilter;
+
+  typedef itk::CastImageFilter<ImageType, IntersonArrayDeviceRF::ImageType> CastToIntersonImageTypeFilter;
+  CastToIntersonImageTypeFilter::Pointer m_CastToIntersonImageTypeFilter;
+
+  typedef itk::BModeImageFilter< ImageType >  BModeImageFilter;
+  BModeImageFilter::Pointer m_BModeFilter;
+
+  typedef itk::ButterworthBandpass1DFilterFunction ButterworthBandpassFilter;
+  ButterworthBandpassFilter::Pointer m_BandpassFilter;
+
+  typedef itk::ButterworthBandpass1DFilterFunction ButterworthBandpassFilterRF;
+  ButterworthBandpassFilterRF::Pointer m_BandpassFilterRF;
+
+  typedef itk::ComposeImageFilter<ImageType> ComposeImageFilter;
+  ComposeImageFilter::Pointer m_ComposeFilter;
+
+  typedef itk::RescaleIntensityImageFilter<ImageType> RescaleFilter;
+  RescaleFilter::Pointer m_RescaleFilter;
+
 
 
   int lastRendered;
+
+  MeasurementWindow *measurement_windows[3];
+  int active_measurement_window = 0;
 
 
   static void __stdcall ProbeHardButtonCallback( void *instance )

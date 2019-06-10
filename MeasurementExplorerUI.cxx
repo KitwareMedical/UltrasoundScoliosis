@@ -29,13 +29,18 @@ limitations under the License.
 #include "MeasurementExplorerUI.h"
 #include "ClickableUltrasound.h"
 
-#include "ITKQtHelpers.hxx"
 #include "ITKFilterFunctions.h"
+
+#include "itkCurvilinearArraySpecialCoordinatesImage.h"
+#include "itkResampleImageFilter.h"
+#include "itkWindowedSincInterpolateImageFunction.h"
+
+
+#include "itkBModeImageFilter.h"
+#include "ITKQtHelpers.hxx"
 
 #include <sstream>
 #include <iomanip>
-#include <string>
-#include <time.h> 
 
 
 void MeasurementExplorerUI::closeEvent( QCloseEvent *event )
@@ -68,14 +73,9 @@ MeasurementExplorerUI::MeasurementExplorerUI( int numberOfThreads, int bufferSiz
   //         SLOT( SetDoubler() ) );
 
 
-
-
-
   intersonDevice.SetRingBufferSize( bufferSize );
 
   ui->label_BModeImage->mainWindow = this;
-
-
 
 
   this->processing = new QTimer( this );
@@ -88,8 +88,42 @@ MeasurementExplorerUI::MeasurementExplorerUI( int numberOfThreads, int bufferSiz
   this->timer->setInterval( 50 );
   this->connect( timer, SIGNAL( timeout() ), SLOT( UpdateImage() ) );
 
-  srand(time(NULL)); //for random patient IDs
-  this->SetPatientID();
+  //Set up b-mode rendering, a la SpectroscopyUI
+
+  m_CastFilter = CastFilter::New();
+
+  m_CastToIntersonImageTypeFilter = CastToIntersonImageTypeFilter::New();
+  m_BModeFilter = BModeImageFilter::New();
+  //add frequency filter
+  m_BandpassFilter = ButterworthBandpassFilter::New();
+
+  this->m_BandpassFilter->SetUpperFrequency(.7);
+
+
+  this->m_BandpassFilter->SetLowerFrequency(.3);
+
+  typedef BModeImageFilter::FrequencyFilterType  FrequencyFilterType;
+  FrequencyFilterType::Pointer freqFilter = FrequencyFilterType::New();
+  freqFilter->SetFilterFunction(m_BandpassFilter);
+
+  m_BModeFilter->SetFrequencyFilter(freqFilter);
+
+  m_BModeFilter->SetInput(m_CastFilter->GetOutput());
+
+  m_RescaleFilter = RescaleFilter::New();
+  m_RescaleFilter->SetOutputMinimum(0);
+  m_RescaleFilter->SetOutputMaximum(255);
+  m_RescaleFilter->SetInput(m_BModeFilter->GetOutput());
+
+  m_ComposeFilter = ComposeImageFilter::New();
+
+  m_ComposeFilter->SetInput(0, m_RescaleFilter->GetOutput());
+  m_ComposeFilter->SetInput(1, m_RescaleFilter->GetOutput());
+  m_ComposeFilter->SetInput(2, m_RescaleFilter->GetOutput());
+
+
+
+
 }
 
 MeasurementExplorerUI::~MeasurementExplorerUI()
@@ -155,33 +189,44 @@ void MeasurementExplorerUI::StopRecording() {
 
 
 
-void MeasurementExplorerUI::SetPatientID() {
-	
-		this->patientID = "------";
-		
-		for (int j = 0; j < 3; j++) {
-			patientID[j] = rand() % 26 + 65;
-			patientID[j + 3] = rand() % 10 + 48;
-		}
-
-		ui->lineEdit->setText(QString(this->patientID.c_str()));
-}
-
 void MeasurementExplorerUI::UpdateImage()
 {
   //display bmode image
-  int currentIndex = intersonDevice.GetCurrentBModeIndex();
+  int currentIndex = intersonDevice.GetCurrentRFIndex();
   if( currentIndex >= 0 && currentIndex != lastRendered )
     {
     lastRendered = currentIndex;
-    IntersonArrayDeviceRF::ImageType::Pointer bmode =
-      intersonDevice.GetBModeImage( currentIndex );
+    IntersonArrayDeviceRF::RFImageType::Pointer rf =
+      intersonDevice.GetRFImage( currentIndex );
 
-    QImage image = ITKQtHelpers::GetQImageColor<IntersonArrayDeviceRF::ImageType>(
-      bmode,
-      bmode->GetLargestPossibleRegion(),
+	std::cout << "rf_shape" << rf->GetLargestPossibleRegion() << std::endl;
+
+	m_CastFilter->SetInput(rf);
+
+	m_ComposeFilter->Update();
+
+	ComposeImageFilter::OutputImagePointer composite = m_ComposeFilter->GetOutput();
+
+	for (int i = 0; i < 100; i++) {
+		auto val = composite->GetPixel({ i, 0 });
+		val.SetElement(0, 255);
+		composite->SetPixel({ i, 0 }, val);
+	}
+
+
+	std::cout << "bmode_shape" << composite->GetLargestPossibleRegion() << std::endl;
+	std::cout << "point_for_processing" << pointForProcessing.x() << " " << pointForProcessing.y() << std::endl;
+
+	//std::cout << composite->GetPixel({ 0, 0 }) << std::endl;
+
+
+
+    QImage image = ITKQtHelpers::GetQImageColor_Vector<ComposeImageFilter::OutputImageType>(
+      composite,
+      composite->GetLargestPossibleRegion(),
       QImage::Format_RGB16
       );
+	std::cout << "made QImage" << std::endl;
 
 #ifdef DEBUG_PRINT
    // std::cout << "Setting Pixmap " << currentIndex << std::endl;
@@ -191,7 +236,7 @@ void MeasurementExplorerUI::UpdateImage()
     ui->label_BModeImage->setScaledContents( true );
     ui->label_BModeImage->setSizePolicy( QSizePolicy::Ignored, QSizePolicy::Ignored );
 	
-	int intensity = bmode->GetPixel({ pointForProcessing.x(), pointForProcessing.y() });
+	int intensity = rf->GetPixel({ pointForProcessing.x(), pointForProcessing.y() });
 	ui->label_intensity->setText(std::to_string(intensity).c_str());
 	
   }
@@ -220,3 +265,22 @@ void MeasurementExplorerUI::SetDoubler()
 void MeasurementExplorerUI::OnUSClicked(QPoint pos) {
 	pointForProcessing = pos;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
