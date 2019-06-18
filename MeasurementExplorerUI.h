@@ -36,12 +36,17 @@ limitations under the License.
 #include <QCheckBox>
 #include <qgroupbox.h>
 #include <QCloseEvent>
+#include <qfiledialog.h>
 
 #include "itkButterworthBandpass1DFilterFunction.h"
+#include "itkWindowedSincInterpolateImageFunction.h"
+#include "itkResampleImageFilter.h"
+#include "itkCurvilinearArraySpecialCoordinatesImage.h"
 #include "itkRescaleIntensityImageFilter.h"
 #include "itkComposeImageFilter.h"
 #include "itkBModeImageFilter.h"
 #include "itkCastImageFilter.h"
+#include "itkRGBPixel.h"
 
 #include "IntersonArrayDeviceRF.hxx"
 #include "ui_MeasurementExplorer.h"
@@ -53,8 +58,7 @@ namespace Ui
   class MainWindow;
 }
 
-
-  //Declaration of MeasurementUI
+//Declaration of MeasurementUI
 class MeasurementExplorerUI : public QMainWindow
 {
   Q_OBJECT
@@ -68,33 +72,27 @@ public:
 protected:
   void  closeEvent( QCloseEvent * event );
 
-
-
 protected slots:
-    /** Quit the application */
   void ConnectProbe();
-  /** Start the application */
+  void SetPowerSpectrum();
   void SetFrequency();
   void SetDepth();
   void SetDoubler();
 
+  void SetActive0(); void SetActive1(); void SetActive2();
+
   void Record();
-  void StopRecording();
 
   /** Update the images displayed from the probe */
   void UpdateImage();
 
 private:
-
-	QPoint pointForProcessing{ 0, 0 };
-
   /** Layout for the Window */
   Ui::MainWindow *ui;
   QTimer *timer;
 
   QTimer *processing;
-  
-
+ 
   IntersonArrayDeviceRF intersonDevice;
   float mmPerPixel;
   typedef itk::Image<double, 2> ImageType;
@@ -123,18 +121,31 @@ private:
   RescaleFilter::Pointer m_RescaleFilter;
 
 
+  typedef itk::CurvilinearArraySpecialCoordinatesImage<double, 2>   CurvedImageType;
+  CurvedImageType::Pointer m_CurvedImage;
+
+
+  typedef itk::ResampleImageFilter < CurvedImageType, ImageType>  ResampleImageFilterType;
+  ResampleImageFilterType::Pointer m_ResampleFilter;
+
+  typedef itk::WindowedSincInterpolateImageFunction< CurvedImageType, 2 > WindowedSincInterpolatorType;
+  
+  WindowedSincInterpolatorType::Pointer m_Interpolator;
+
+
+
+
 
   int lastRendered;
 
   MeasurementWindow *measurement_windows[3];
   int active_measurement_window = 0;
 
-
   static void __stdcall ProbeHardButtonCallback( void *instance )
     {
     MeasurementExplorerUI *oui = ( MeasurementExplorerUI* )instance;
     std::cout << "ding!" << std::endl;
-    //oui->ToggleEstimation();
+    oui->Record();
     };
 
 };

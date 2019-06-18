@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1325</width>
-    <height>757</height>
+    <width>1621</width>
+    <height>1067</height>
    </rect>
   </property>
   <property name="font">
@@ -139,82 +139,9 @@
        </layout>
       </item>
       <item>
-       <widget class="Line" name="line">
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>40</height>
-         </size>
-        </property>
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="Line" name="line_2">
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>40</height>
-         </size>
-        </property>
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="generateIdentifierButton">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="font">
-         <font>
-          <pointsize>20</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>Generate Identifier</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <layout class="QGridLayout" name="gridLayout_5">
-        <item row="1" column="0">
-         <widget class="QLabel" name="label_2">
-          <property name="font">
-           <font>
-            <pointsize>12</pointsize>
-           </font>
-          </property>
-          <property name="text">
-           <string>Anonymous Identifier</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <widget class="QLineEdit" name="lineEdit"/>
-        </item>
-       </layout>
-      </item>
-      <item>
-       <widget class="Line" name="line_5">
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>40</height>
-         </size>
-        </property>
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-      </item>
-      <item>
        <widget class="QPushButton" name="recordButton">
         <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="font">
          <font>
@@ -222,65 +149,9 @@
          </font>
         </property>
         <property name="text">
-         <string>Record</string>
+         <string>Save Image</string>
         </property>
        </widget>
-      </item>
-      <item>
-       <widget class="Line" name="line_4">
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>40</height>
-         </size>
-        </property>
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="stopButton">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="font">
-         <font>
-          <pointsize>20</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>Stop</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <layout class="QGridLayout" name="gridLayout_3">
-        <item row="3" column="0">
-         <widget class="QLabel" name="label_6">
-          <property name="font">
-           <font>
-            <pointsize>12</pointsize>
-           </font>
-          </property>
-          <property name="text">
-           <string>Time Recorded:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="1">
-         <widget class="QLabel" name="label_7">
-          <property name="font">
-           <font>
-            <pointsize>12</pointsize>
-           </font>
-          </property>
-          <property name="text">
-           <string>0:00</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
       </item>
       <item>
        <spacer name="verticalSpacer">
@@ -305,6 +176,13 @@
       <property name="leftMargin">
        <number>0</number>
       </property>
+      <item>
+       <widget class="QPushButton" name="moveRed">
+        <property name="text">
+         <string>Move Red</string>
+        </property>
+       </widget>
+      </item>
       <item>
        <widget class="QFrame" name="frame">
         <property name="minimumSize">
@@ -406,6 +284,26 @@ QLabel {border: 0px solid black}</string>
           </item>
          </layout>
         </widget>
+        <widget class="QLabel" name="redGraph">
+         <property name="geometry">
+          <rect>
+           <x>200</x>
+           <y>10</y>
+           <width>391</width>
+           <height>81</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="moveGreen">
+        <property name="text">
+         <string>Move Green</string>
+        </property>
        </widget>
       </item>
       <item>
@@ -509,6 +407,26 @@ QLabel {border: 0px solid black}</string>
           </item>
          </layout>
         </widget>
+        <widget class="QLabel" name="greenGraph">
+         <property name="geometry">
+          <rect>
+           <x>200</x>
+           <y>10</y>
+           <width>391</width>
+           <height>71</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="moveBlue">
+        <property name="text">
+         <string>Move Blue</string>
+        </property>
        </widget>
       </item>
       <item>
@@ -612,6 +530,43 @@ QLabel {border: 0px solid black}</string>
           </item>
          </layout>
         </widget>
+        <widget class="QLabel" name="blueGraph">
+         <property name="geometry">
+          <rect>
+           <x>200</x>
+           <y>10</y>
+           <width>391</width>
+           <height>71</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>ROI depth</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QSlider" name="horizontalSlider">
+        <property name="minimum">
+         <number>10</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="radioButtonPowerSpectrum">
+        <property name="text">
+         <string>Graph Power Spectrum</string>
+        </property>
        </widget>
       </item>
       <item>
@@ -633,7 +588,7 @@ QLabel {border: 0px solid black}</string>
      <widget class="QGroupBox" name="groupBox">
       <property name="minimumSize">
        <size>
-        <width>512</width>
+        <width>800</width>
         <height>0</height>
        </size>
       </property>
@@ -645,20 +600,20 @@ QLabel {border: 0px solid black}</string>
         <rect>
          <x>0</x>
          <y>80</y>
-         <width>512</width>
-         <height>512</height>
+         <width>800</width>
+         <height>800</height>
         </rect>
        </property>
        <property name="minimumSize">
         <size>
-         <width>512</width>
-         <height>512</height>
+         <width>800</width>
+         <height>800</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>512</width>
-         <height>512</height>
+         <width>800</width>
+         <height>800</height>
         </size>
        </property>
        <property name="frameShape">
@@ -696,7 +651,7 @@ QLabel {border: 0px solid black}</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1325</width>
+     <width>1621</width>
      <height>21</height>
     </rect>
    </property>
