@@ -32,8 +32,7 @@ limitations under the License.
 #include "itkStatisticsImageFilter.h"
 #include "IntersonArrayDeviceRF.hxx"
 #include "itkRegionOfInterestImageFilter.h"
-#include "itkSpectra1DImageFilter.h"
-#include "itkSpectra1DSupportWindowImageFilter.h"
+#include "itkForward1DFFTImageFilter.h"
 #include "itkCurvilinearArraySpecialCoordinatesImage.h"
 #include "itkCastImageFilter.h"
 
@@ -45,10 +44,7 @@ public:
 	typedef IntersonArrayDeviceRF::RFImageType                     RFImageType;
 	typedef itk::CastImageFilter<RFImageType, ImageType>           CastDoubleFilterType;
 
-	typedef itk::Spectra1DSupportWindowImageFilter<ImageType>      WindowFilterType;
-	typedef itk::Spectra1DImageFilter<ImageType, 
-		WindowFilterType::OutputImageType, VectorImageType>                  SpectraFilterType;
-	
+	typedef itk::Forward1DFFTImageFilter<ImageType>                FFTFilterType;
 
 	typedef itk::StatisticsImageFilter<ImageType>                  StatisticsImageFilterType;
 	typedef itk::RegionOfInterestImageFilter<ImageType, ImageType> BmodeROIFilterType;
@@ -64,6 +60,9 @@ public:
 
 	bool graphPowerSpectrum = false;
 
+	double max = -999999999;
+	double min = 999999999;
+
 private:
     QGridLayout* m_ui;
 	QLabel* m_graph;
@@ -71,12 +70,13 @@ private:
 
 	StatisticsImageFilterType::Pointer m_StatsFilter;
 	ImageType::RegionType m_ITKRegion;
+	ImageType::RegionType m_nearITKRegion;
+	ImageType::RegionType m_farITKRegion;
 	BmodeROIFilterType::Pointer m_BmodeROIFilter;
 	RFROIFilterType::Pointer m_RFROIFilter;
 
 	CastDoubleFilterType::Pointer m_CastFilter;
-	SpectraFilterType::Pointer m_SpectraFilter;
-	WindowFilterType::Pointer m_WindowFilter;
+	FFTFilterType::Pointer m_FFTFilter;
 
 	bool abort = false;
     int region[4];
@@ -84,8 +84,7 @@ private:
 
 	
 
-	double max = -999999999;
-	double min = 999999999;
+	
 };
 
 #endif

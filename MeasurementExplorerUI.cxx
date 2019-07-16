@@ -102,9 +102,9 @@ MeasurementExplorerUI::MeasurementExplorerUI( int numberOfThreads, int bufferSiz
   //add frequency filter
   m_BandpassFilter = ButterworthBandpassFilter::New();
 
-  this->m_BandpassFilter->SetUpperFrequency(.7);
+  this->m_BandpassFilter->SetUpperFrequency(.9);
 
-  this->m_BandpassFilter->SetLowerFrequency(.3);
+  this->m_BandpassFilter->SetLowerFrequency(.1);
 
   typedef BModeImageFilter::FrequencyFilterType  FrequencyFilterType;
   FrequencyFilterType::Pointer freqFilter = FrequencyFilterType::New();
@@ -160,6 +160,7 @@ MeasurementExplorerUI::MeasurementExplorerUI( int numberOfThreads, int bufferSiz
 
   m_ResampleFilter = ResampleImageFilterType::New();
   m_ResampleFilter->SetInput(m_CurvedImage);
+
   
   CurvedImageType::SizeType outputSize = m_CurvedImage->GetLargestPossibleRegion().GetSize();
   outputSize[0] = 800;
@@ -180,6 +181,12 @@ MeasurementExplorerUI::MeasurementExplorerUI( int numberOfThreads, int bufferSiz
   m_ComposeFilter->SetInput(0, m_ResampleFilter->GetOutput());
   m_ComposeFilter->SetInput(1, m_ResampleFilter->GetOutput());
   m_ComposeFilter->SetInput(2, m_ResampleFilter->GetOutput());
+
+  m_ComposeFilter = ComposeImageFilter::New();
+
+  m_ComposeFilter->SetInput(0, m_RescaleFilter->GetOutput());
+  m_ComposeFilter->SetInput(1, m_RescaleFilter->GetOutput());
+  m_ComposeFilter->SetInput(2, m_RescaleFilter->GetOutput());
 }
 
 MeasurementExplorerUI::~MeasurementExplorerUI()
@@ -253,6 +260,16 @@ void MeasurementExplorerUI::Record() {
 
 void MeasurementExplorerUI::UpdateImage()
 {
+
+  //sin
+  for (int i = 0; i < 3; i++) {
+	  for (int j = 0; j < 3; j++) {
+
+		  this->measurement_windows[i]->max = std::max(this->measurement_windows[i]->max, this->measurement_windows[j]->max);
+		  this->measurement_windows[i]->min = std::min(this->measurement_windows[i]->min, this->measurement_windows[j]->min);
+	  }
+  }
+
   //display bmode image
   int currentIndex = intersonDevice.GetCurrentRFIndex();
   if( currentIndex >= 0 && currentIndex != lastRendered )
@@ -324,6 +341,8 @@ void MeasurementExplorerUI::SetPowerSpectrum()
 {
 	for (int i = 0; i < 3; i++) {
 		this->measurement_windows[i]->graphPowerSpectrum = this->ui->radioButtonPowerSpectrum->isChecked();
+		this->measurement_windows[i]->max = -9999999999;
+		this->measurement_windows[i]->min = 99999999999;
 	}
 }
 

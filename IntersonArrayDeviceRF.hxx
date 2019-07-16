@@ -50,8 +50,8 @@ public:
     {
     //Setup defaults
     frequencyIndex = 0;
-    focusIndex = 0;
-    highVoltage = 10;
+    focusIndex = 2;
+    highVoltage = 20;
     gain = 100;
     depth = 100;
     steering = 0;

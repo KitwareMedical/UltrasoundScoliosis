@@ -57,39 +57,15 @@ MeasurementWindow::MeasurementWindow(QGridLayout* my_ui, QLabel* my_graph) {
 	m_RFROIFilter = RFROIFilterType::New();
 
 	m_CastFilter = CastDoubleFilterType::New();
-	m_SpectraFilter = SpectraFilterType::New();
-	m_WindowFilter = WindowFilterType::New();
-
+	m_FFTFilter = FFTFilterType::New();
+	
 	xsize = 128, ysize = 17;
 
-	/*
-	m_label = new QLabel("Horse");
-	m_label->setParent(m_graph->parentWidget());
-	m_label->setGeometry(m_graph->geometry());
-	*/
+	((QLabel *)(this->m_ui->itemAtPosition(0, 1)->widget()))->setText("---");
+	((QLabel *)(this->m_ui->itemAtPosition(1, 1)->widget()))->setText("---");
+	((QLabel *)(this->m_ui->itemAtPosition(2, 1)->widget()))->setText("---");
+	((QLabel *)(this->m_ui->itemAtPosition(3, 1)->widget()))->setText("---");
 
-	ImageType::Pointer sideLines = CreateImage<ImageType>(256, 20);
-	sideLines->FillBuffer(5);
-	m_WindowFilter->SetInput(sideLines);
-	m_WindowFilter->SetFFT1DSize(160);
-	m_WindowFilter->SetStep(1);
-	m_WindowFilter->UpdateLargestPossibleRegion();
-	m_WindowFilter->Update();
-	std::cout << "the pixel" << std::endl;
-	for (auto val : m_WindowFilter->GetOutput()->GetPixel({ 128, 10 })) {
-		std::cout << val << std::endl;
-	}
-
-	auto window = CreateImage<WindowFilterType::OutputImageType>(32, 2);
-
-	for (int i = 0; i < ysize * 2; i++) {
-		window->GetPixel({ 0, 0 }).push_back({ 0, i });
-	}
-	auto dict = window->GetMetaDataDictionary();
-	itk::EncapsulateMetaData<unsigned int>(dict,
-		"FFT1DSize", 256);
-
-	m_SpectraFilter->SetSupportWindowImage(window);
 }
 
 	
@@ -98,7 +74,10 @@ void MeasurementWindow::UpdateMeasurements(IntersonArrayDeviceRF::RFImageType::P
     //draw graph
 	
 	int vres = 70;
-	ImageType::Pointer graph = CreateImage<ImageType>(region[1] - region[0], vres);
+	int image_depth = region[1] - region[0];
+	int image_width = region[3] - region[2];
+	ImageType::Pointer graph = CreateImage<ImageType>(image_depth, vres);
+
 	graph->FillBuffer(127);
 
 	if (graphPowerSpectrum) {
@@ -112,17 +91,103 @@ void MeasurementWindow::UpdateMeasurements(IntersonArrayDeviceRF::RFImageType::P
 		m_CastFilter->GetOutput()->Print(std::cout);
 		std::cout << "that was it" << std::endl;
 		*/
-		m_SpectraFilter->SetInput(m_CastFilter->GetOutput());
+		m_FFTFilter->SetInput(m_CastFilter->GetOutput());
 
-		m_SpectraFilter->Update();
+		m_FFTFilter->Update();
 		
 		//std::cout << "Spectra:" << std::endl;
 		//m_SpectraFilter->GetOutput()->Print(std::cout);
-		
 
+		//m_FFTFilter->GetOutput()->Print(std::cout);
+		std::cout << "noneth loop" << std::endl;
+		for (int l = 0; l < image_depth; l++) {
+			double sum_power = 0;
+			for (int j = 0; j < image_width; j++) {
+
+
+				auto the_value = m_FFTFilter->GetOutput()->GetPixel({ l / 2, j });
+				auto mag = std::abs(the_value) * std::abs(the_value);
+				sum_power += mag;
+			}
+			sum_power = -std::log(sum_power);
+			max = std::max(sum_power, max);
+			min = std::min(sum_power, min);
+		}
+		std::cout << "first loop" << std::endl;
+		for (int l = 0; l < image_depth; l++) {
+			double sum_power = 0;
+			for (int j = 0; j < image_width; j++) {
+
+
+				auto the_value = m_FFTFilter->GetOutput()->GetPixel({ l / 2, j });
+				auto mag = std::abs(the_value) * std::abs(the_value);
+				sum_power += mag;
+			}
+			sum_power = -std::log(sum_power);
+
+			double the_value = vres * (sum_power - min) / (max - min);
+			int val = (int)the_value;
+			for (int w = 0; w < vres; w++) {
+				graph->SetPixel({ l, w }, 255 * (w > val));
+			}
+		}
+		std::cout << "second loop" << std::endl;
+
+
+		double sum_power = 0;
+		for (int l = image_depth / 4; l < 3 * image_depth / 4; l++) {
+
+			for (int j = 0; j < image_width; j++) {
+
+
+				auto the_value = m_FFTFilter->GetOutput()->GetPixel({ l / 2, j });
+				auto mag = std::abs(the_value) * std::abs(the_value);
+				sum_power += mag;
+			}
+		}
+
+		((QLabel *)(this->m_ui->itemAtPosition(0, 1)->widget()))->setText(std::to_string(sum_power / (image_depth * image_width * 4000)).c_str());
+
+		m_RFROIFilter->SetRegionOfInterest(m_nearITKRegion);
+
+		m_FFTFilter->Update();
+
+		double near_power = 0;
+		for (int l = image_depth / 8; l < 3 * image_depth / 8; l++) {
+
+			for (int j = 0; j < image_width; j++) {
+
+
+				auto the_value = m_FFTFilter->GetOutput()->GetPixel({ l / 2, j });
+				auto mag = std::abs(the_value) * std::abs(the_value);
+				near_power += mag;
+			}
+		}
+		m_RFROIFilter->SetRegionOfInterest(m_farITKRegion);
+
+		m_FFTFilter->Update();
+
+		double far_power = 0;
+		for (int l = image_depth / 8; l < 3 * image_depth / 8; l++) {
+
+			for (int j = 0; j < image_width; j++) {
+
+
+				auto the_value = m_FFTFilter->GetOutput()->GetPixel({ l / 2, j });
+				auto mag = std::abs(the_value) * std::abs(the_value);
+				far_power += mag;
+			}
+		}
+
+		((QLabel *)(this->m_ui->itemAtPosition(3, 1)->widget()))->setText(std::to_string(far_power / near_power).c_str());
+		m_RFROIFilter->SetRegionOfInterest(m_ITKRegion);
 
 
 	} else {
+		//cannot compute attenuation
+		((QLabel *)(this->m_ui->itemAtPosition(3, 1)->widget()))->setText("---");
+		((QLabel *)(this->m_ui->itemAtPosition(0, 1)->widget()))->setText("---");
+
        //graph literal rf values
 		for (int l = region[0]; l < region[1]; l++) {
 			double the_value = (double)rf->GetPixel({ l, (region[2] + region[3]) / 2 });
@@ -144,16 +209,16 @@ void MeasurementWindow::UpdateMeasurements(IntersonArrayDeviceRF::RFImageType::P
 	m_BmodeROIFilter->SetInput(bmode);
 	m_StatsFilter->SetInput(m_BmodeROIFilter->GetOutput());
 	m_StatsFilter->Update();
-	((QLabel *)(this->m_ui->itemAtPosition(2, 1)->widget()))->setText(std::to_string(m_StatsFilter->GetMean()).c_str());
+	((QLabel * )(this->m_ui->itemAtPosition(2, 1)->widget()))->setText(std::to_string(m_StatsFilter->GetMean()).c_str());
 
-	((QLabel *)(this->m_ui->itemAtPosition(1, 1)->widget()))->setText(std::to_string(m_StatsFilter->GetSigma()).c_str());
+	((QLabel * )(this->m_ui->itemAtPosition(1, 1)->widget()))->setText(std::to_string(m_StatsFilter->GetSigma()).c_str());
 
 	QImage image = ITKQtHelpers::GetQImageColor<ImageType>(
 		graph,
 		graph->GetLargestPossibleRegion(),
 		QImage::Format_RGB16
 		);
-//	std::cout << "made graph qimage" << std::endl;
+	std::cout << "made graph qimage" << std::endl;
 	m_graph->setPixmap(QPixmap::fromImage(image));
 	m_graph->setScaledContents(true);
 	m_graph->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
@@ -172,13 +237,12 @@ void MeasurementWindow::DrawRectangle(itk::VectorImage<double, 2>::Pointer compo
 	for (double i = region[0]; i < region[1]; i+= 2) {
 		for (double j = region[2]; j < region[3]; j+= .1) {
 			if (is_near_edge(region[0], region[1], i) || is_near_edge(region[2], region[3], j)) {
-				itk::Point<double, 2> the_point;
 
+			    itk::Point<double, 2> the_point;
 				const double idx_pt[2] = { i, j };
-
 				curvedImage->TransformContinuousIndexToPhysicalPoint<double, double>(itk::ContinuousIndex<double, 2>(idx_pt), the_point);
-
 				auto point_index = composite->TransformPhysicalPointToIndex<double>(the_point);
+
 				if (composite->GetLargestPossibleRegion().IsInside(point_index) ){
 					auto val = composite->GetPixel(point_index);
 					val.SetElement(index, 255);
@@ -210,6 +274,22 @@ void MeasurementWindow::SetRegion(int x, int y) {
 
 	m_BmodeROIFilter->SetRegionOfInterest(m_ITKRegion);
 	m_RFROIFilter->SetRegionOfInterest(m_ITKRegion);
+
+	ImageType::SizeType halfsize;
+
+	halfsize[0] = (region[1] - region[0]) / 2;
+	halfsize[1] = region[3] - region[2];
+
+	ImageType::IndexType farIndex;
+	farIndex[0] = region[0] + halfsize[0];
+	farIndex[1] = region[2];
+
+	m_nearITKRegion.SetIndex(index);
+	m_nearITKRegion.SetSize(halfsize);
+
+	m_farITKRegion.SetIndex(farIndex);
+	m_farITKRegion.SetSize(halfsize);
+	
 
 	//m_StatsFilter->SetRegionOf
 }
