@@ -95,7 +95,7 @@ private:
   
 
   ProgramState state = WaitingForInitialization;
-  bool NNConnected = false, USConnected = false, phoneConnected=false;
+  bool NNConnected = false, USConnected = false, trackerConnected=false;
 
   /** Layout for the Window */
   Ui::MainWindow *ui;

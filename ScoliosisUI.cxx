@@ -294,10 +294,10 @@ void ScoliosisUI::UpdateImage()
 
 		
 	}
-	//sorry it's 1 AM
+	
 	int secs = this->savedImages.size() / 15;
 	ui->label_7->setText((std::to_string(secs / 60) + ":" + (secs % 60 < 10 ? "0" : "") + std::to_string(secs % 60)).c_str());
-	//</sorry>
+
 	
   }
   double r = server_roll;
@@ -313,12 +313,12 @@ void ScoliosisUI::UpdateConnectionUIs() {
 		}
 	}
 	if (server_roll != 0) { //Fixme
-		phoneConnected = true;
-		ui->l_phoneConnected->setText("Phone Connected");
+		trackerConnected = true;
+		ui->l_phoneConnected->setText("Tracker Connected");
 	}
 
 
-	if (NNConnected && USConnected && phoneConnected && this->state == WaitingForInitialization) {
+	if (NNConnected && USConnected && trackerConnected && this->state == WaitingForInitialization) {
 		this->state = WaitingToGenerateIdentifier;
 		this->ui->generateIdentifierButton->setEnabled(true);
 	}
