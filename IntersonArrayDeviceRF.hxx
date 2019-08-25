@@ -673,17 +673,15 @@ private:
 
   ContainerType::ScanConverterError SetupScanConverter()
     {
-//    int scanWidth = 512; //Size of final converted image
-//    int scanHeight = 512; //Size of final converted image
-
-    int scanWidth = ContainerType::MAX_SAMPLES; //Does not matter
-    int scanHeight = height; //Does not matter
+    int scanWidth = 512; //Size of final converted image
+    int scanHeight = 512; //Size of final converted image
 
     std::cout << "rdata" << container.GetRFData() << std::endl;
 
     if( container.GetRFData() )
       {
       scanWidth = ContainerType::MAX_RFSAMPLES;
+	  scanHeight = height;
       }
     int cfmDepth = 0;
     ContainerType::ScanConverterError converterErrorIdle =

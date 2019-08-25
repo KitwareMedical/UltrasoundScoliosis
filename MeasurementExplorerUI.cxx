@@ -36,6 +36,8 @@ limitations under the License.
 #include "itkWindowedSincInterpolateImageFunction.h"
 
 #include "itkBModeImageFilter.h"
+#include "itkTileImageFilter.h"
+#include "itkImageFileWriter.h"
 #include "ITKQtHelpers.hxx"
 
 #include <sstream>
@@ -78,6 +80,9 @@ MeasurementExplorerUI::MeasurementExplorerUI( int numberOfThreads, int bufferSiz
 	  SIGNAL(clicked()), this, SLOT(SetActive1()));
   connect(ui->moveBlue,
 	  SIGNAL(clicked()), this, SLOT(SetActive2()));
+
+  connect(ui->freezePlayButton,
+	  SIGNAL(clicked()), this, SLOT(FreezeButtonClicked()));
 
   intersonDevice.SetRingBufferSize( bufferSize );
 
@@ -146,7 +151,7 @@ MeasurementExplorerUI::MeasurementExplorerUI( int numberOfThreads, int bufferSiz
   
   const double lateralAngularSeparation = (vnl_math::pi / 3) /
 	  (imageSize[1] - 1);
-  std::cout << "lateral angular separation: " << lateralAngularSeparation << std::endl;
+  //std::cout << "lateral angular separation: " << lateralAngularSeparation << std::endl;
   m_CurvedImage->SetLateralAngularSeparation(lateralAngularSeparation);
   const double radiusStart = 46.4;
 
@@ -182,12 +187,34 @@ MeasurementExplorerUI::MeasurementExplorerUI( int numberOfThreads, int bufferSiz
   m_ComposeFilter->SetInput(1, m_ResampleFilter->GetOutput());
   m_ComposeFilter->SetInput(2, m_ResampleFilter->GetOutput());
 
-  m_ComposeFilter = ComposeImageFilter::New();
+  //m_ComposeFilter = ComposeImageFilter::New();
 
-  m_ComposeFilter->SetInput(0, m_RescaleFilter->GetOutput());
-  m_ComposeFilter->SetInput(1, m_RescaleFilter->GetOutput());
-  m_ComposeFilter->SetInput(2, m_RescaleFilter->GetOutput());
+  //m_ComposeFilter->SetInput(0, m_RescaleFilter->GetOutput());
+ // m_ComposeFilter->SetInput(1, m_RescaleFilter->GetOutput());
+//  m_ComposeFilter->SetInput(2, m_RescaleFilter->GetOutput());
 }
+
+void MeasurementExplorerUI::ConnectFiltersForCurvedImage() {
+	m_ComposeFilter = ComposeImageFilter::New();
+
+	m_ComposeFilter->SetInput(0, m_ResampleFilter->GetOutput());
+	m_ComposeFilter->SetInput(1, m_ResampleFilter->GetOutput());
+	m_ComposeFilter->SetInput(2, m_ResampleFilter->GetOutput());
+
+	is_curved = true;
+
+}
+
+void MeasurementExplorerUI::ConnectFiltersForLinearImage() {
+	m_ComposeFilter = ComposeImageFilter::New();
+	m_ComposeFilter->SetInput(0, m_RescaleFilter->GetOutput());
+	m_ComposeFilter->SetInput(1, m_RescaleFilter->GetOutput());
+	m_ComposeFilter->SetInput(2, m_RescaleFilter->GetOutput());
+
+	is_curved = false;
+}
+
+
 
 MeasurementExplorerUI::~MeasurementExplorerUI()
 {
@@ -202,48 +229,59 @@ void MeasurementExplorerUI::SetActive2() { this->active_measurement_window = 2; 
 void MeasurementExplorerUI::ConnectProbe()
 {
 #ifdef DEBUG_PRINT
-  std::cout << "Connect probe called" << std::endl;
+	std::cout << "Connect probe called" << std::endl;
 #endif
-  if( !intersonDevice.ConnectProbe( true ) )
-    {
+	if (!intersonDevice.ConnectProbe(true))
+	{
 #ifdef DEBUG_PRINT
-    std::cout << "Connect probe failed" << std::endl;
+		std::cout << "Connect probe failed" << std::endl;
 #endif
-    return;
-    //TODO: Show UI message
-    }
+		return;
+		//TODO: Show UI message
+	}
 
-  IntersonArrayDeviceRF::FrequenciesType fs = intersonDevice.GetFrequencies();
-  ui->dropDown_Frequency->clear();
-  for( unsigned int i = 0; i < fs.size(); i++ )
-    {
-    std::ostringstream ftext;
-    ftext << std::setprecision( 1 ) << std::setw( 3 ) << std::fixed;
-    ftext << fs[ i ] << " hz";
-    ui->dropDown_Frequency->addItem( ftext.str().c_str() );
-    }
+	IntersonArrayDeviceRF::FrequenciesType fs = intersonDevice.GetFrequencies();
+	ui->dropDown_Frequency->clear();
+	for (unsigned int i = 0; i < fs.size(); i++)
+	{
+		std::ostringstream ftext;
+		ftext << std::setprecision(1) << std::setw(3) << std::fixed;
+		ftext << fs[i] << " hz";
+		ui->dropDown_Frequency->addItem(ftext.str().c_str());
+	}
 
-  intersonDevice.GetHWControls().SetNewHardButtonCallback( &ProbeHardButtonCallback, this );
-  
-  if( !intersonDevice.Start() )
-    {
+	intersonDevice.GetHWControls().SetNewHardButtonCallback(&ProbeHardButtonCallback, this);
+
+	if (!intersonDevice.Start())
+	{
 #ifdef DEBUG_PRINT
-    std::cout << "Starting scan failed" << std::endl;
+		std::cout << "Starting scan failed" << std::endl;
 #endif
-    return;
-    //TODO: Show UI message
-    }
+		return;
+		//TODO: Show UI message
+	}
 
-  this->ui->dropDown_Frequency->setCurrentIndex(1);
-  this->SetFrequency();
-  this->SetDepth();  
+	this->ui->dropDown_Frequency->setCurrentIndex(1);
+	this->SetFrequency();
+	this->SetDepth();
 
-  this->timer->start();
+	this->timer->start();
+
+	if (this->intersonDevice.GetProbeId() == this->intersonDevice.GetHWControls().ID_CA_5_0MHz) {
+		this->ConnectFiltersForCurvedImage();
+	}
+	else {
+		this->ConnectFiltersForLinearImage();
+	}
+
 
 }
 bool currently_asking_for_file_this_var_is_sin = false;
 void MeasurementExplorerUI::Record() {
 	if (!currently_asking_for_file_this_var_is_sin) {
+		if (!this->is_frozen) {
+			this->FreezeButtonClicked();
+		}
 		currently_asking_for_file_this_var_is_sin = true;
 		QPixmap originalPixmap;
 
@@ -253,7 +291,41 @@ void MeasurementExplorerUI::Record() {
 
 		QString fileName = QFileDialog::getSaveFileName(this, "name for file", "", ".png");
 
-		originalPixmap.save(fileName, format);
+		originalPixmap.save(fileName +"."+ format, format);
+
+
+		typedef itk::Image<IntersonArrayDeviceRF::RFImageType::PixelType, 3> StackedImageType;
+
+		typedef itk::TileImageFilter<IntersonArrayDeviceRF::RFImageType, StackedImageType> FilterType;
+
+		auto tiler = FilterType::New();
+		itk::FixedArray< unsigned int, 3> layout;
+
+		layout[0] = 1;
+		layout[1] = 1;
+		layout[2] = 0;
+
+		tiler->SetLayout(layout);
+
+		for (int i = 0; i < 99; i++) {
+			std::cerr << i << std::endl;
+			tiler->SetInput(i, this->intersonDevice.GetRFImage((i + intersonDevice.GetCurrentRFIndex()) % 99));
+		}
+		IntersonArrayDeviceRF::ImageType::PixelType filler = 0;
+		tiler->SetDefaultPixelValue(filler);
+
+		tiler->Update();
+
+		typedef itk::ImageFileWriter<StackedImageType> WriterType;
+
+		auto writer = WriterType::New();
+
+		writer->SetInput(tiler->GetOutput());
+		writer->SetFileName((fileName + ".nrrd").toStdString());
+
+		writer->Update();
+
+		
 		currently_asking_for_file_this_var_is_sin = false;
 	}
 }
@@ -261,7 +333,7 @@ void MeasurementExplorerUI::Record() {
 void MeasurementExplorerUI::UpdateImage()
 {
 
-  //sin
+  // O(n^2) but also O(9). Needs to be fixed if we ever have thousands of measurement windows?
   for (int i = 0; i < 3; i++) {
 	  for (int j = 0; j < 3; j++) {
 
@@ -272,6 +344,14 @@ void MeasurementExplorerUI::UpdateImage()
 
   //display bmode image
   int currentIndex = intersonDevice.GetCurrentRFIndex();
+  if( is_frozen ){
+	  currentIndex -= 99 - this->ui->frameSlider->value();
+
+	  while (currentIndex < 0)
+		  currentIndex += this->intersonDevice.GetRingBufferSize();
+	  
+
+  }
   if( currentIndex >= 0 && currentIndex != lastRendered )
     {
     lastRendered = currentIndex;
@@ -344,10 +424,12 @@ void MeasurementExplorerUI::SetPowerSpectrum()
 		this->measurement_windows[i]->max = -9999999999;
 		this->measurement_windows[i]->min = 99999999999;
 	}
+	this->lastRendered = -1;
+	this->UpdateImage();
 }
 
 void MeasurementExplorerUI::OnUSClicked(QPoint pos) {
-	std::cout << active_measurement_window << std::endl;
+	//std::cout << active_measurement_window << std::endl;
 	
 	itk::Point<double, 2> the_point;
 	const double idx_pt[2] = { pos.x(), pos.y() };
@@ -357,10 +439,27 @@ void MeasurementExplorerUI::OnUSClicked(QPoint pos) {
 
 	if (m_CurvedImage->GetLargestPossibleRegion().IsInside(rf_idx)) {
 
-		std::cout << "region" << rf_idx[0] << " " << rf_idx[1] << std::endl;
+		//std::cout << "region" << rf_idx[0] << " " << rf_idx[1] << std::endl;
 
 		measurement_windows[active_measurement_window]->SetRegion(rf_idx[0], rf_idx[1]);
 	}
+	this->lastRendered = -1;
+	this->UpdateImage();
+}
+
+void MeasurementExplorerUI::FreezeButtonClicked() {
+
+	this->ui->frameSlider->setValue(99);
+	if (this->is_frozen) {
+		this->intersonDevice.Start();
+		this->ui->frameSlider->setEnabled(false);
+		this->ui->freezePlayButton->setText("Freeze");
+	} else {
+		this->intersonDevice.Stop();
+		this->ui->frameSlider->setEnabled(true);
+		this->ui->freezePlayButton->setText("Play");
+	}
+	this->is_frozen = !this->is_frozen;
 }
 
 

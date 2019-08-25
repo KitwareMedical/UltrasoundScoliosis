@@ -37,7 +37,7 @@ int main( int argc, char *argv[] )
   QApplication app( argc, argv );
 
   int nThreads = 4;
-  int ringBufferSize = 20;
+  int ringBufferSize = 99;
   MeasurementExplorerUI window( nThreads, ringBufferSize, nullptr );
   window.show();
 

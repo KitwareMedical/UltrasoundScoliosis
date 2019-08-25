@@ -72,6 +72,9 @@ public:
 protected:
   void  closeEvent( QCloseEvent * event );
 
+  void MeasurementExplorerUI::ConnectFiltersForCurvedImage();
+  void MeasurementExplorerUI::ConnectFiltersForLinearImage();
+
 protected slots:
   void ConnectProbe();
   void SetPowerSpectrum();
@@ -82,6 +85,8 @@ protected slots:
   void SetActive0(); void SetActive1(); void SetActive2();
 
   void Record();
+
+  void FreezeButtonClicked();
 
   /** Update the images displayed from the probe */
   void UpdateImage();
@@ -135,7 +140,9 @@ private:
 
 
 
-
+  //ui state
+  bool is_frozen = false;
+  bool is_curved;
   int lastRendered;
 
   MeasurementWindow *measurement_windows[3];
