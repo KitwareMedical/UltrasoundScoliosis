@@ -99,7 +99,7 @@ void MeasurementWindow::UpdateMeasurements(IntersonArrayDeviceRF::RFImageType::P
 		//m_SpectraFilter->GetOutput()->Print(std::cout);
 
 		//m_FFTFilter->GetOutput()->Print(std::cout);
-		std::cout << "noneth loop" << std::endl;
+		//std::cout << "noneth loop" << std::endl;
 		for (int l = 0; l < image_depth; l++) {
 			double sum_power = 0;
 			for (int j = 0; j < image_width; j++) {
@@ -113,7 +113,7 @@ void MeasurementWindow::UpdateMeasurements(IntersonArrayDeviceRF::RFImageType::P
 			max = std::max(sum_power, max);
 			min = std::min(sum_power, min);
 		}
-		std::cout << "first loop" << std::endl;
+		//std::cout << "first loop" << std::endl;
 		for (int l = 0; l < image_depth; l++) {
 			double sum_power = 0;
 			for (int j = 0; j < image_width; j++) {
@@ -131,7 +131,7 @@ void MeasurementWindow::UpdateMeasurements(IntersonArrayDeviceRF::RFImageType::P
 				graph->SetPixel({ l, w }, 255 * (w > val));
 			}
 		}
-		std::cout << "second loop" << std::endl;
+		//std::cout << "second loop" << std::endl;
 
 
 		double sum_power = 0;
@@ -218,7 +218,7 @@ void MeasurementWindow::UpdateMeasurements(IntersonArrayDeviceRF::RFImageType::P
 		graph->GetLargestPossibleRegion(),
 		QImage::Format_RGB16
 		);
-	std::cout << "made graph qimage" << std::endl;
+	//std::cout << "made graph qimage" << std::endl;
 	m_graph->setPixmap(QPixmap::fromImage(image));
 	m_graph->setScaledContents(true);
 	m_graph->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
@@ -237,16 +237,24 @@ void MeasurementWindow::DrawRectangle(itk::VectorImage<double, 2>::Pointer compo
 	for (double i = region[0]; i < region[1]; i+= 2) {
 		for (double j = region[2]; j < region[3]; j+= .1) {
 			if (is_near_edge(region[0], region[1], i) || is_near_edge(region[2], region[3], j)) {
+				if (curvedImage) {
+					itk::Point<double, 2> the_point;
+					const double idx_pt[2] = { i, j };
+					curvedImage->TransformContinuousIndexToPhysicalPoint<double, double>(itk::ContinuousIndex<double, 2>(idx_pt), the_point);
+					auto point_index = composite->TransformPhysicalPointToIndex<double>(the_point);
 
-			    itk::Point<double, 2> the_point;
-				const double idx_pt[2] = { i, j };
-				curvedImage->TransformContinuousIndexToPhysicalPoint<double, double>(itk::ContinuousIndex<double, 2>(idx_pt), the_point);
-				auto point_index = composite->TransformPhysicalPointToIndex<double>(the_point);
-
-				if (composite->GetLargestPossibleRegion().IsInside(point_index) ){
-					auto val = composite->GetPixel(point_index);
+					if (composite->GetLargestPossibleRegion().IsInside(point_index)) {
+						auto val = composite->GetPixel(point_index);
+						val.SetElement(index, 255);
+						composite->SetPixel(point_index, val);
+					}
+				}
+				else {
+					///std::cout << composite->GetLargestPossibleRegion() << std::endl;
+					//std::cout << "i" << i << std::endl;
+					//std::cout << "j" << j << std::endl;
+					auto val = composite->GetPixel({ (int)j, (int)i });
 					val.SetElement(index, 255);
-					composite->SetPixel(point_index, val);
 				}
 			}
 		}

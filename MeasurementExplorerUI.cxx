@@ -29,6 +29,10 @@ limitations under the License.
 #include "MeasurementExplorerUI.h"
 #include "ClickableUltrasound.h"
 
+#include "qsettings.h"
+#include <QStandardPaths>
+#include <qmessagebox.h>
+
 #include "ITKFilterFunctions.h"
 
 #include "itkCurvilinearArraySpecialCoordinatesImage.h"
@@ -38,6 +42,7 @@ limitations under the License.
 #include "itkBModeImageFilter.h"
 #include "itkTileImageFilter.h"
 #include "itkImageFileWriter.h"
+#include "itkImageFileReader.h"
 #include "ITKQtHelpers.hxx"
 
 #include <sstream>
@@ -61,6 +66,10 @@ MeasurementExplorerUI::MeasurementExplorerUI( int numberOfThreads, int bufferSiz
 
   this->setWindowTitle( "Ultrasound Measurement Explorer" );
 
+  this->outputFilename = QSettings("Kitware", "MeasurementExplorer").value("outputFilename", QStandardPaths::DesktopLocation + "new_ultrasound").toString();
+  this->ui->label_outputfile->setText(this->outputFilename);
+
+
   //Links buttons and actions
   connect( ui->pushButton_ConnectProbe,
     SIGNAL( clicked() ), this, SLOT( ConnectProbe() ) );
@@ -73,6 +82,8 @@ MeasurementExplorerUI::MeasurementExplorerUI( int numberOfThreads, int bufferSiz
 
   connect( ui->radioButtonPowerSpectrum,
 	  SIGNAL( clicked() ), this, SLOT( SetPowerSpectrum() ) );
+  connect(ui->resetGraphAxes,
+	  SIGNAL(clicked()), this, SLOT( SetPowerSpectrum() ));
 
   connect( ui->moveRed,
 	  SIGNAL( clicked() ), this, SLOT( SetActive0() ) );
@@ -83,6 +94,12 @@ MeasurementExplorerUI::MeasurementExplorerUI( int numberOfThreads, int bufferSiz
 
   connect(ui->freezePlayButton,
 	  SIGNAL(clicked()), this, SLOT(FreezeButtonClicked()));
+  connect(ui->setOutputFile,
+	  SIGNAL(clicked()), this, SLOT(SetOutputFile()));
+  connect(ui->pushbutton_LoadCine,
+	  SIGNAL(clicked()), this, SLOT(LoadCine()));
+
+
 
   intersonDevice.SetRingBufferSize( bufferSize );
 
@@ -124,6 +141,9 @@ MeasurementExplorerUI::MeasurementExplorerUI( int numberOfThreads, int bufferSiz
   m_RescaleFilter->SetOutputMaximum(255);
   m_RescaleFilter->SetInput(m_BModeFilter->GetOutput());
 
+  m_WindowIntensityFilter = WindowIntensityFilter::New();
+  m_WindowIntensityFilter->SetFunctor([](double x) {return x; });
+
   measurement_windows[0] = new MeasurementWindow(ui->measurement_window_0, ui->redGraph);
   measurement_windows[1] = new MeasurementWindow(ui->measurement_window_2, ui->greenGraph);
   measurement_windows[2] = new MeasurementWindow(ui->measurement_window_3, ui->blueGraph);
@@ -131,6 +151,15 @@ MeasurementExplorerUI::MeasurementExplorerUI( int numberOfThreads, int bufferSiz
   measurement_windows[0]->SetRegion(430, 43);
   measurement_windows[1]->SetRegion(460, 43);
   measurement_windows[2]->SetRegion(430, 46);
+
+  m_TransposeFilter = TransposeFilter::New();
+  TransposeFilter::PermuteOrderArrayType order;
+  order[0] = 1;
+  order[1] = 0;
+
+  m_TransposeFilter->SetOrder(order);
+
+  m_TransposeFilter->SetInput(m_RescaleFilter->GetOutput());
 
   m_CurvedImage = CurvedImageType::New();
   CurvedImageType::IndexType imageIndex;
@@ -207,9 +236,9 @@ void MeasurementExplorerUI::ConnectFiltersForCurvedImage() {
 
 void MeasurementExplorerUI::ConnectFiltersForLinearImage() {
 	m_ComposeFilter = ComposeImageFilter::New();
-	m_ComposeFilter->SetInput(0, m_RescaleFilter->GetOutput());
-	m_ComposeFilter->SetInput(1, m_RescaleFilter->GetOutput());
-	m_ComposeFilter->SetInput(2, m_RescaleFilter->GetOutput());
+	m_ComposeFilter->SetInput(0, m_TransposeFilter->GetOutput());
+	m_ComposeFilter->SetInput(1, m_TransposeFilter->GetOutput());
+	m_ComposeFilter->SetInput(2, m_TransposeFilter->GetOutput());
 
 	is_curved = false;
 }
@@ -276,58 +305,101 @@ void MeasurementExplorerUI::ConnectProbe()
 
 
 }
-bool currently_asking_for_file_this_var_is_sin = false;
+
+
+// The following function is creative commons from https://stackoverflow.com/questions/18073378/add-unique-suffix-to-file-name
+// form - "path/to/file.tar.gz", "path/to/file (1).tar.gz",
+// "path/to/file (2).tar.gz", etc.
+QString addUniqueSuffix(const QString &fileName)
+{
+	// If the file doesn't exist return the same name.
+	if (!QFile::exists(fileName)) {
+		return fileName;
+	}
+
+	QFileInfo fileInfo(fileName);
+	QString ret;
+
+	// Split the file into 2 parts - dot+extension, and everything else. For
+	// example, "path/file.tar.gz" becomes "path/file"+".tar.gz", while
+	// "path/file" (note lack of extension) becomes "path/file"+"".
+	QString secondPart = fileInfo.completeSuffix();
+	QString firstPart;
+	if (!secondPart.isEmpty()) {
+		secondPart = "." + secondPart;
+		firstPart = fileName.left(fileName.size() - secondPart.size());
+	}
+	else {
+		firstPart = fileName;
+	}
+
+	// Try with an ever-increasing number suffix, until we've reached a file
+	// that does not yet exist.
+	for (int ii = 1; ; ii++) {
+		// Construct the new file name by adding the unique number between the
+		// first and second part.
+		ret = QString("%1 (%2)%3").arg(firstPart).arg(ii).arg(secondPart);
+		// If no file exists with the new name, return it.
+		if (!QFile::exists(ret)) {
+			return ret;
+		}
+	}
+}
+
+
 void MeasurementExplorerUI::Record() {
-	if (!currently_asking_for_file_this_var_is_sin) {
-		if (!this->is_frozen) {
-			this->FreezeButtonClicked();
-		}
-		currently_asking_for_file_this_var_is_sin = true;
-		QPixmap originalPixmap;
+	
+	if (!this->is_frozen) {
+		this->FreezeButtonClicked();
+	}
 
-		originalPixmap = QPixmap::grabWidget(ui->centralwidget);
+	if (outputFilename == "") {
+		this->SetOutputFile();
+	}
+		
+	QPixmap originalPixmap;
 
-		char* format = "png";
-
-		QString fileName = QFileDialog::getSaveFileName(this, "name for file", "", ".png");
-
-		originalPixmap.save(fileName +"."+ format, format);
-
-
-		typedef itk::Image<IntersonArrayDeviceRF::RFImageType::PixelType, 3> StackedImageType;
-
-		typedef itk::TileImageFilter<IntersonArrayDeviceRF::RFImageType, StackedImageType> FilterType;
-
-		auto tiler = FilterType::New();
-		itk::FixedArray< unsigned int, 3> layout;
-
-		layout[0] = 1;
-		layout[1] = 1;
-		layout[2] = 0;
-
-		tiler->SetLayout(layout);
-
-		for (int i = 0; i < 99; i++) {
-			std::cerr << i << std::endl;
-			tiler->SetInput(i, this->intersonDevice.GetRFImage((i + intersonDevice.GetCurrentRFIndex()) % 99));
-		}
-		IntersonArrayDeviceRF::ImageType::PixelType filler = 0;
-		tiler->SetDefaultPixelValue(filler);
-
-		tiler->Update();
-
-		typedef itk::ImageFileWriter<StackedImageType> WriterType;
-
-		auto writer = WriterType::New();
-
-		writer->SetInput(tiler->GetOutput());
-		writer->SetFileName((fileName + ".nrrd").toStdString());
-
-		writer->Update();
+	originalPixmap = QPixmap::grabWidget(ui->centralwidget);
 
 		
-		currently_asking_for_file_this_var_is_sin = false;
+	char* format = "png";
+
+	QString filename = addUniqueSuffix(this->outputFilename + "." + format);
+	originalPixmap.save(filename, format);
+
+
+	typedef itk::Image<IntersonArrayDeviceRF::RFImageType::PixelType, 3> StackedImageType;
+
+	typedef itk::TileImageFilter<IntersonArrayDeviceRF::RFImageType, StackedImageType> FilterType;
+
+	auto tiler = FilterType::New();
+	itk::FixedArray< unsigned int, 3> layout;
+
+	layout[0] = 1;
+	layout[1] = 1;
+	layout[2] = 0;
+
+	tiler->SetLayout(layout);
+
+	for (int i = 0; i < intersonDevice.GetRingBufferSize(); i++) {
+		std::cerr << i << std::endl;
+		tiler->SetInput(i, this->intersonDevice.GetRFImage((i + intersonDevice.GetCurrentRFIndex()) % intersonDevice.GetRingBufferSize()));
 	}
+	IntersonArrayDeviceRF::ImageType::PixelType filler = 0;
+	tiler->SetDefaultPixelValue(filler);
+
+	tiler->Update();
+
+	typedef itk::ImageFileWriter<StackedImageType> WriterType;
+
+	auto writer = WriterType::New();
+
+	writer->SetInput(tiler->GetOutput());
+	writer->SetFileName((filename.chopped(4) + ".nrrd").toStdString());
+
+	writer->Update();
+
+	this->ui->label_outputfile->setText(addUniqueSuffix(this->outputFilename + "." + format));	
 }
 
 void MeasurementExplorerUI::UpdateImage()
@@ -345,7 +417,7 @@ void MeasurementExplorerUI::UpdateImage()
   //display bmode image
   int currentIndex = intersonDevice.GetCurrentRFIndex();
   if( is_frozen ){
-	  currentIndex -= 99 - this->ui->frameSlider->value();
+	  currentIndex -= intersonDevice.GetRingBufferSize() - this->ui->frameSlider->value();
 
 	  while (currentIndex < 0)
 		  currentIndex += this->intersonDevice.GetRingBufferSize();
@@ -365,25 +437,28 @@ void MeasurementExplorerUI::UpdateImage()
 		this->measurement_windows[i]->UpdateMeasurements(rf, m_BModeFilter->GetOutput());
 	}
 
-	// Copy data into Curvilinear Image
-	const ImageType::RegionType & largestRegion =
-		m_RescaleFilter->GetOutput()->GetLargestPossibleRegion();
-	const ImageType::SizeType imageSize = largestRegion.GetSize();
+	if (is_curved) {
 
-	double *imageBuffer = m_RescaleFilter->GetOutput()->GetPixelContainer()->GetBufferPointer();
-	double *curvedImageBuffer = m_CurvedImage->GetPixelContainer()->GetBufferPointer();
-	
-	std::memcpy(curvedImageBuffer, imageBuffer,
-		imageSize[0] * imageSize[1] * sizeof(double));
-	// Done Copying
+		// Copy data into Curvilinear Image
+		const ImageType::RegionType & largestRegion =
+			m_RescaleFilter->GetOutput()->GetLargestPossibleRegion();
+		const ImageType::SizeType imageSize = largestRegion.GetSize();
 
-	m_CurvedImage->Modified();
+		double *imageBuffer = m_RescaleFilter->GetOutput()->GetPixelContainer()->GetBufferPointer();
+		double *curvedImageBuffer = m_CurvedImage->GetPixelContainer()->GetBufferPointer();
+
+		std::memcpy(curvedImageBuffer, imageBuffer,
+			imageSize[0] * imageSize[1] * sizeof(double));
+		// Done Copying
+
+		m_CurvedImage->Modified();
+	}
 	m_ComposeFilter->Update();
 
 	ComposeImageFilter::OutputImagePointer composite = m_ComposeFilter->GetOutput();
 
 	for (int i = 0; i < 3; i++) {
-		this->measurement_windows[i]->DrawRectangle(composite, m_CurvedImage, i);
+		this->measurement_windows[i]->DrawRectangle(composite, is_curved ? m_CurvedImage : nullptr, i);
 	}
 
 	QImage image = ITKQtHelpers::GetQImageColor_Vector<ComposeImageFilter::OutputImageType>(
@@ -428,20 +503,35 @@ void MeasurementExplorerUI::SetPowerSpectrum()
 	this->UpdateImage();
 }
 
+
+void MeasurementExplorerUI::ResetGraphLimits(){
+	for (int i = 0; i < 3; i++) {
+		this->measurement_windows[i]->max = -9999999999;
+		this->measurement_windows[i]->min = 99999999999;
+	}
+	this->lastRendered = -1;
+	this->UpdateImage();
+}
+
+
 void MeasurementExplorerUI::OnUSClicked(QPoint pos) {
 	//std::cout << active_measurement_window << std::endl;
-	
-	itk::Point<double, 2> the_point;
-	const double idx_pt[2] = { pos.x(), pos.y() };
-	m_ComposeFilter->GetOutput()->TransformContinuousIndexToPhysicalPoint<double, double>(itk::ContinuousIndex<double, 2>(idx_pt), the_point);
-	itk::Index<2> rf_idx;
-	m_CurvedImage->TransformPhysicalPointToIndex<double>(the_point, rf_idx);
+	if (is_curved) {
+		itk::Point<double, 2> the_point;
+		const double idx_pt[2] = { pos.x(), pos.y() };
+		m_ComposeFilter->GetOutput()->TransformContinuousIndexToPhysicalPoint<double, double>(itk::ContinuousIndex<double, 2>(idx_pt), the_point);
+		itk::Index<2> rf_idx;
+		m_CurvedImage->TransformPhysicalPointToIndex<double>(the_point, rf_idx);
 
-	if (m_CurvedImage->GetLargestPossibleRegion().IsInside(rf_idx)) {
+		if (m_CurvedImage->GetLargestPossibleRegion().IsInside(rf_idx)) {
 
-		//std::cout << "region" << rf_idx[0] << " " << rf_idx[1] << std::endl;
+			//std::cout << "region" << rf_idx[0] << " " << rf_idx[1] << std::endl;
 
-		measurement_windows[active_measurement_window]->SetRegion(rf_idx[0], rf_idx[1]);
+			measurement_windows[active_measurement_window]->SetRegion(rf_idx[0], rf_idx[1]);
+		}
+	}
+	else {
+		measurement_windows[active_measurement_window]->SetRegion(pos.y() / 800. * 2048. , pos.x() / 800. * 128.);
 	}
 	this->lastRendered = -1;
 	this->UpdateImage();
@@ -457,11 +547,58 @@ void MeasurementExplorerUI::FreezeButtonClicked() {
 	} else {
 		this->intersonDevice.Stop();
 		this->ui->frameSlider->setEnabled(true);
-		this->ui->freezePlayButton->setText("Play");
+		this->ui->freezePlayButton->setText("Start");
 	}
 	this->is_frozen = !this->is_frozen;
 }
 
+bool currently_asking_for_file_this_var_is_sin = false;
+void MeasurementExplorerUI::SetOutputFile() {
+	if (!currently_asking_for_file_this_var_is_sin) {
+		currently_asking_for_file_this_var_is_sin = true;
+
+
+		QString fileName = QFileDialog::getSaveFileName(this, "name for file", outputFilename, "*.png");
+		QSettings("Kitware", "MeasurementExplorer").setValue("outputFilename", fileName);
+		this->outputFilename = fileName;
+		this->ui->label_outputfile->setText(fileName);
+		currently_asking_for_file_this_var_is_sin = false;
+	}
+}
+
+void MeasurementExplorerUI::LoadCine() {
+	if (!this->is_frozen)
+		this->FreezeButtonClicked();
+	if (!currently_asking_for_file_this_var_is_sin) {
+		currently_asking_for_file_this_var_is_sin = true;
+
+		QString fileName = QFileDialog::getOpenFileName(this, "Cine to load", QFileInfo(outputFilename).path(), "*.nrrd");
+
+		if (!QFileInfo(fileName).isFile())
+			return;
+			
+		typedef itk::Image<IntersonArrayDeviceRF::RFImageType::PixelType, 3> StackedImageType;
+		using ReaderType = itk::ImageFileReader< StackedImageType >;
+		ReaderType::Pointer reader = ReaderType::New();
+
+		reader->SetFileName(fileName.toStdString());
+
+		reader->Update();
+
+
+		auto image = reader->GetOutput();
+
+		if (image->GetLargestPossibleRegion() != StackedImageType::RegionType({ 0, 0, 0 }, { (uint)intersonDevice.GetRFModeDepthResolution(), (uint)intersonDevice.GetNumberOfLines(), (uint)intersonDevice.GetRingBufferSize() })) {
+			QMessageBox::warning(this, "File incompatible", "The requested file was not able to be read as a Cine taken with the currently connected probe.");
+		}
+		
+		for (int i = 0; i < intersonDevice.GetRingBufferSize(); i++) {
+			this->intersonDevice.AddRFImageToBuffer(image->GetBufferPointer() + i * intersonDevice.GetRFModeDepthResolution() * intersonDevice.GetNumberOfLines());
+		}
+
+		currently_asking_for_file_this_var_is_sin = false;
+	}
+}
 
 
 

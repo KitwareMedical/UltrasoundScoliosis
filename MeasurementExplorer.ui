@@ -180,7 +180,26 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="pushButton">
+       <widget class="QLabel" name="label_outputfile">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="setOutputFile">
+        <property name="font">
+         <font>
+          <pointsize>20</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>Set Output File</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pushbutton_LoadCine">
         <property name="font">
          <font>
           <pointsize>20</pointsize>
@@ -584,16 +603,30 @@ QLabel {border: 0px solid black}</string>
        </widget>
       </item>
       <item>
-       <widget class="QLabel" name="label_2">
+       <widget class="QRadioButton" name="radioButtonPowerSpectrum">
         <property name="text">
-         <string>ROI depth</string>
+         <string>Graph Power Spectrum</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QSlider" name="horizontalSlider">
-        <property name="minimum">
-         <number>10</number>
+       <widget class="QPushButton" name="resetGraphAxes">
+        <property name="text">
+         <string>Reset Graph Axes</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_11">
+        <property name="text">
+         <string>Intensity Wndow:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QSlider" name="slider_clampMin">
+        <property name="maximum">
+         <number>255</number>
         </property>
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -601,9 +634,15 @@ QLabel {border: 0px solid black}</string>
        </widget>
       </item>
       <item>
-       <widget class="QRadioButton" name="radioButtonPowerSpectrum">
-        <property name="text">
-         <string>Graph Power Spectrum</string>
+       <widget class="QSlider" name="slider_clampMax">
+        <property name="maximum">
+         <number>255</number>
+        </property>
+        <property name="value">
+         <number>255</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
         </property>
        </widget>
       </item>

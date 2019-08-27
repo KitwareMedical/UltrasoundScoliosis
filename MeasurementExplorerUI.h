@@ -38,6 +38,7 @@ limitations under the License.
 #include <QCloseEvent>
 #include <qfiledialog.h>
 
+#include "itkPermuteAxesImageFilter.h"
 #include "itkButterworthBandpass1DFilterFunction.h"
 #include "itkWindowedSincInterpolateImageFunction.h"
 #include "itkResampleImageFilter.h"
@@ -85,8 +86,13 @@ protected slots:
   void SetActive0(); void SetActive1(); void SetActive2();
 
   void Record();
-
+  void SetOutputFile();
+  void LoadCine();
   void FreezeButtonClicked();
+
+  void ResetGraphLimits();
+
+  //void SetIntensityWindow();
 
   /** Update the images displayed from the probe */
   void UpdateImage();
@@ -125,6 +131,12 @@ private:
   typedef itk::RescaleIntensityImageFilter<ImageType> RescaleFilter;
   RescaleFilter::Pointer m_RescaleFilter;
 
+  typedef itk::UnaryGeneratorImageFilter<ImageType, ImageType> WindowIntensityFilter;
+  WindowIntensityFilter::Pointer m_WindowIntensityFilter;
+
+  typedef itk::PermuteAxesImageFilter<ImageType> TransposeFilter;
+  TransposeFilter::Pointer m_TransposeFilter;
+
 
   typedef itk::CurvilinearArraySpecialCoordinatesImage<double, 2>   CurvedImageType;
   CurvedImageType::Pointer m_CurvedImage;
@@ -144,6 +156,8 @@ private:
   bool is_frozen = false;
   bool is_curved;
   int lastRendered;
+
+  QString outputFilename = "";
 
   MeasurementWindow *measurement_windows[3];
   int active_measurement_window = 0;
