@@ -234,7 +234,7 @@ bool is_near_edge(int min, int max, int val) {
 
 void MeasurementWindow::DrawRectangle(itk::VectorImage<double, 2>::Pointer composite, itk::CurvilinearArraySpecialCoordinatesImage<double, 2>::Pointer curvedImage, int index) {
 
-	for (double i = region[0]; i < region[1]; i+= 2) {
+	for (double i = region[0]; i < region[1]; i+= 1) {
 		for (double j = region[2]; j < region[3]; j+= .1) {
 			if (is_near_edge(region[0], region[1], i) || is_near_edge(region[2], region[3], j)) {
 				if (curvedImage) {

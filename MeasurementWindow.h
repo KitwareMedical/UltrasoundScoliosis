@@ -82,6 +82,8 @@ private:
     int region[4];
 	int xsize, ysize;
 
+	ImageType::Pointer m_mode_buffer;
+
 	
 
 	

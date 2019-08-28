@@ -194,7 +194,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Set Output File</string>
+         <string>Save As</string>
         </property>
        </widget>
       </item>
@@ -643,6 +643,26 @@ QLabel {border: 0px solid black}</string>
         </property>
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>M Mode of red square</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_m_mode">
+        <property name="minimumSize">
+         <size>
+          <width>300</width>
+          <height>300</height>
+         </size>
+        </property>
+        <property name="text">
+         <string/>
         </property>
        </widget>
       </item>

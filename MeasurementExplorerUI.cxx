@@ -67,7 +67,7 @@ MeasurementExplorerUI::MeasurementExplorerUI( int numberOfThreads, int bufferSiz
   this->setWindowTitle( "Ultrasound Measurement Explorer" );
 
   this->outputFilename = QSettings("Kitware", "MeasurementExplorer").value("outputFilename", QStandardPaths::DesktopLocation + "new_ultrasound").toString();
-  this->ui->label_outputfile->setText(this->outputFilename);
+  this->ui->label_outputfile->setText(QFileInfo(this->outputFilename).baseName());
 
 
   //Links buttons and actions
@@ -394,12 +394,12 @@ void MeasurementExplorerUI::Record() {
 
 	auto writer = WriterType::New();
 
+	this->ui->label_outputfile->setText(QFileInfo(addUniqueSuffix(this->outputFilename + "." + format)).baseName());
+
 	writer->SetInput(tiler->GetOutput());
 	writer->SetFileName((filename.chopped(4) + ".nrrd").toStdString());
 
 	writer->Update();
-
-	this->ui->label_outputfile->setText(addUniqueSuffix(this->outputFilename + "." + format));	
 }
 
 void MeasurementExplorerUI::UpdateImage()
@@ -429,6 +429,12 @@ void MeasurementExplorerUI::UpdateImage()
     lastRendered = currentIndex;
     IntersonArrayDeviceRF::RFImageType::Pointer rf =
       intersonDevice.GetRFImage( currentIndex );
+
+	if (is_curved) {
+		for (int i = 0; i < 127; i++) {
+			rf->SetPixel({ 2047, i }, rf->GetPixel({ 2046, i })); 
+		}
+	}
 
 	m_CastFilter->SetInput(rf);
 	m_RescaleFilter->Update();
@@ -501,6 +507,8 @@ void MeasurementExplorerUI::SetPowerSpectrum()
 	}
 	this->lastRendered = -1;
 	this->UpdateImage();
+	this->lastRendered = -1;
+	this->UpdateImage();
 }
 
 
@@ -509,6 +517,8 @@ void MeasurementExplorerUI::ResetGraphLimits(){
 		this->measurement_windows[i]->max = -9999999999;
 		this->measurement_windows[i]->min = 99999999999;
 	}
+	this->lastRendered = -2;
+	this->UpdateImage();
 	this->lastRendered = -1;
 	this->UpdateImage();
 }
@@ -533,6 +543,8 @@ void MeasurementExplorerUI::OnUSClicked(QPoint pos) {
 	else {
 		measurement_windows[active_measurement_window]->SetRegion(pos.y() / 800. * 2048. , pos.x() / 800. * 128.);
 	}
+	this->lastRendered = -1;
+	this->UpdateImage();
 	this->lastRendered = -1;
 	this->UpdateImage();
 }
@@ -561,9 +573,11 @@ void MeasurementExplorerUI::SetOutputFile() {
 		QString fileName = QFileDialog::getSaveFileName(this, "name for file", outputFilename, "*.png");
 		QSettings("Kitware", "MeasurementExplorer").setValue("outputFilename", fileName);
 		this->outputFilename = fileName;
-		this->ui->label_outputfile->setText(fileName);
+		this->ui->label_outputfile->setText(QFileInfo(fileName).baseName());
 		currently_asking_for_file_this_var_is_sin = false;
 	}
+
+	Record();
 }
 
 void MeasurementExplorerUI::LoadCine() {
@@ -574,8 +588,10 @@ void MeasurementExplorerUI::LoadCine() {
 
 		QString fileName = QFileDialog::getOpenFileName(this, "Cine to load", QFileInfo(outputFilename).path(), "*.nrrd");
 
-		if (!QFileInfo(fileName).isFile())
+		if (!QFileInfo(fileName).isFile()) {
+			currently_asking_for_file_this_var_is_sin = false;
 			return;
+		}
 			
 		typedef itk::Image<IntersonArrayDeviceRF::RFImageType::PixelType, 3> StackedImageType;
 		using ReaderType = itk::ImageFileReader< StackedImageType >;
@@ -590,12 +606,17 @@ void MeasurementExplorerUI::LoadCine() {
 
 		if (image->GetLargestPossibleRegion() != StackedImageType::RegionType({ 0, 0, 0 }, { (uint)intersonDevice.GetRFModeDepthResolution(), (uint)intersonDevice.GetNumberOfLines(), (uint)intersonDevice.GetRingBufferSize() })) {
 			QMessageBox::warning(this, "File incompatible", "The requested file was not able to be read as a Cine taken with the currently connected probe.");
+			currently_asking_for_file_this_var_is_sin = false;
+			return;
 		}
 		
 		for (int i = 0; i < intersonDevice.GetRingBufferSize(); i++) {
 			this->intersonDevice.AddRFImageToBuffer(image->GetBufferPointer() + i * intersonDevice.GetRFModeDepthResolution() * intersonDevice.GetNumberOfLines());
 		}
-
+		this->lastRendered = -1;
+		this->UpdateImage();
+		this->lastRendered = -1;
+		this->UpdateImage();
 		currently_asking_for_file_this_var_is_sin = false;
 	}
 }
