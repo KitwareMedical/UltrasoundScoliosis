@@ -658,7 +658,7 @@ QLabel {border: 0px solid black}</string>
         <property name="minimumSize">
          <size>
           <width>300</width>
-          <height>300</height>
+          <height>450</height>
          </size>
         </property>
         <property name="text">

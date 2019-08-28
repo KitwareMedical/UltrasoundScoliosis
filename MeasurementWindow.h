@@ -32,6 +32,8 @@ limitations under the License.
 #include "itkStatisticsImageFilter.h"
 #include "IntersonArrayDeviceRF.hxx"
 #include "itkRegionOfInterestImageFilter.h"
+#include "itkRescaleIntensityImageFilter.h"
+#include "itkPermuteAxesImageFilter.h"
 #include "itkForward1DFFTImageFilter.h"
 #include "itkCurvilinearArraySpecialCoordinatesImage.h"
 #include "itkCastImageFilter.h"
@@ -58,6 +60,8 @@ public:
     void DrawRectangle(VectorImageType::Pointer composite, itk::CurvilinearArraySpecialCoordinatesImage<double, 2>::Pointer curvedImage, int index);
     void SetRegion(int x, int y);
 
+	void DrawMMode(IntersonArrayDeviceRF& intersonDevice, int index, CastDoubleFilterType::Pointer input, itk::PermuteAxesImageFilter<ImageType>::Pointer output, QLabel* mModeLabel);
+
 	bool graphPowerSpectrum = false;
 
 	double max = -999999999;
@@ -82,7 +86,7 @@ private:
     int region[4];
 	int xsize, ysize;
 
-	ImageType::Pointer m_mode_buffer;
+	RFImageType::Pointer m_mode_buffer;
 
 	
 

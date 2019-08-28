@@ -430,6 +430,7 @@ void MeasurementExplorerUI::UpdateImage()
     IntersonArrayDeviceRF::RFImageType::Pointer rf =
       intersonDevice.GetRFImage( currentIndex );
 
+	//This is a hardware specific hack to remove artifacts caused when the probe returns shortmin as the last element of every rf line
 	if (is_curved) {
 		for (int i = 0; i < 127; i++) {
 			rf->SetPixel({ 2047, i }, rf->GetPixel({ 2046, i })); 
@@ -437,6 +438,7 @@ void MeasurementExplorerUI::UpdateImage()
 	}
 
 	m_CastFilter->SetInput(rf);
+	m_RescaleFilter->UpdateLargestPossibleRegion();
 	m_RescaleFilter->Update();
 
 	for (int i = 0; i < 3; i++) {
@@ -459,6 +461,7 @@ void MeasurementExplorerUI::UpdateImage()
 
 		m_CurvedImage->Modified();
 	}
+	m_ComposeFilter->UpdateLargestPossibleRegion();
 	m_ComposeFilter->Update();
 
 	ComposeImageFilter::OutputImagePointer composite = m_ComposeFilter->GetOutput();
@@ -476,6 +479,8 @@ void MeasurementExplorerUI::UpdateImage()
     ui->label_BModeImage->setPixmap( QPixmap::fromImage( image ) );
     ui->label_BModeImage->setScaledContents( true );
     ui->label_BModeImage->setSizePolicy( QSizePolicy::Ignored, QSizePolicy::Ignored );
+
+	this->measurement_windows[0]->DrawMMode(this->intersonDevice, currentIndex, this->m_CastFilter, this->m_TransposeFilter, this->ui->label_m_mode);
   }
   this->timer->start();
 }

@@ -58,8 +58,12 @@ MeasurementWindow::MeasurementWindow(QGridLayout* my_ui, QLabel* my_graph) {
 
 	m_CastFilter = CastDoubleFilterType::New();
 	m_FFTFilter = FFTFilterType::New();
+
+	
 	
 	xsize = 128, ysize = 17;
+
+	m_mode_buffer = CreateImage<RFImageType>(2048, 99);
 
 	((QLabel *)(this->m_ui->itemAtPosition(0, 1)->widget()))->setText("---");
 	((QLabel *)(this->m_ui->itemAtPosition(1, 1)->widget()))->setText("---");
@@ -259,6 +263,33 @@ void MeasurementWindow::DrawRectangle(itk::VectorImage<double, 2>::Pointer compo
 			}
 		}
 	}
+}
+
+void MeasurementWindow::DrawMMode(IntersonArrayDeviceRF& intersonDevice, int index, CastDoubleFilterType::Pointer input, itk::PermuteAxesImageFilter<ImageType>::Pointer output, QLabel* mModeLabel) {
+	
+		
+		
+
+		for (int i = 0; i < 99; i++) {
+			IntersonArrayDeviceRF::RFImageType::Pointer rf =
+				intersonDevice.GetRFImage(((i + index) % 99));
+			std::memcpy(m_mode_buffer->GetBufferPointer() + 2048 * (98 - i), rf->GetBufferPointer() + 2048 * (region[2] + region[3]) / 2, 2048 * sizeof(RFImageType::PixelType));
+		}
+		input->SetInput(this->m_mode_buffer);
+		output->UpdateLargestPossibleRegion();
+		output->Update();
+		
+		
+
+		QImage image = ITKQtHelpers::GetQImageColor<ImageType>(
+     	output->GetOutput(),
+			output->GetOutput()->GetLargestPossibleRegion(),
+			QImage::Format_RGB16
+			);
+
+		mModeLabel->setPixmap(QPixmap::fromImage(image));
+		mModeLabel->setScaledContents(true);
+		mModeLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
 }
 
 void MeasurementWindow::SetRegion(int x, int y) {
