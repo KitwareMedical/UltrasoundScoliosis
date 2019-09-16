@@ -37,15 +37,26 @@ limitations under the License.
 #include <qgroupbox.h>
 #include <QCloseEvent>
 
+
+#define BOOST_SPIRIT_THREADSAFE
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
+
+
 #include "IntersonArrayDeviceRF.hxx"
-#include "ui_OpticNerve.h"
-#include "OpticNerveCalculator.hxx"
+#include "ui_Scoliosis.h"
+
+#include "ScoliosisQueryNN.h"
+
+#include "itkImageDuplicator.h"
 
 //Forward declaration of Ui::MainWindow;
 namespace Ui
 {
   class MainWindow;
 }
+
+enum ProgramState { WaitingForInitialization, WaitingToGenerateIdentifier, Recording, WaitingToRecord, WritingToDisk};
 
   //Declaration of OpticNerveUI
 class ScoliosisUI : public QMainWindow
@@ -59,6 +70,8 @@ public:
 protected:
   void  closeEvent( QCloseEvent * event );
 
+
+
 protected slots:
     /** Quit the application */
   void ConnectProbe();
@@ -66,16 +79,31 @@ protected slots:
   void SetFrequency();
   void SetDepth();
   void SetDoubler();
+  void SetPatientID();
+
+  void Record();
+  void StopRecording();
 
   /** Update the images displayed from the probe */
   void UpdateImage();
 
+  void UpdateConnectionUIs();
+
 private:
+  NeuralNetworkSocketConnection nnSocketConnection;
+
+  
+
+  ProgramState state = WaitingForInitialization;
+  bool NNConnected = false, USConnected = false, trackerConnected=false;
+
   /** Layout for the Window */
   Ui::MainWindow *ui;
   QTimer *timer;
 
   QTimer *processing;
+  
+  QTimer *updateConnectionUIsTimer;
 
   IntersonArrayDeviceRF intersonDevice;
   float mmPerPixel;
@@ -83,12 +111,20 @@ private:
 
   int lastRendered;
 
+  std::string patientID;
+  int scan_count;
+  itk::ImageDuplicator<IntersonArrayDeviceRF::ImageType>::Pointer duplicator 
+    = itk::ImageDuplicator<IntersonArrayDeviceRF::ImageType>::New();
+  std::vector<IntersonArrayDeviceRF::ImageType::Pointer> savedImages;
+  boost::property_tree::ptree scan_metadata;
+
   static void __stdcall ProbeHardButtonCallback( void *instance )
     {
     ScoliosisUI *oui = ( ScoliosisUI* )instance;
+    std::cout << "ding!" << std::endl;
     //oui->ToggleEstimation();
     };
 
 };
 
-#endif
+#endif SCOLIOSISUI_H
