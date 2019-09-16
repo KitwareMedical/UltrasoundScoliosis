@@ -22,11 +22,7 @@
 ############################################################################
 cmake_minimum_required( VERSION 3.5 )
 
-project( UltrasoundIntersonApps CXX )
-
-option( Build_Spectroscopy ON )
-option( Build_PTX ON )
-option( BUILD_MEASUREMENTEXPLORER ON )
+project( UltrasoundScoliosis CXX )
 
 #Required packages and libraries
 find_package( IntersonArraySDKCxx REQUIRED )
@@ -36,30 +32,6 @@ find_package( IntersonArraySDKCxx REQUIRED )
 
 find_package( ITK REQUIRED )
 
-if( ${Build_Spectroscopy} OR ${BUILD_MEASUREMENTEXPLORER})
-find_package( ITK COMPONENTS
-  Ultrasound
-  ITKBinaryMathematicalMorphology
-  ITKCommon
-  ITKDistanceMap
-  ITKImageFilterBase
-  ITKImageFunction
-  ITKImageFusion
-  ITKImageGrid
-  ITKImageIntensity
-  ITKLabelMap
-  ITKMathematicalMorphology
-  ITKMetricsv4
-  ITKOptimizersv4
-  ITKRegistrationMethodsv4
-  ITKSmoothing
-  ITKSpatialObjects
-  ITKThresholding
-  ITKTransform
-  ITKIOImageBase
-  ITKIONRRD
-)
-else()
 find_package( ITK COMPONENTS
   ITKBinaryMathematicalMorphology
   ITKCommon
@@ -81,15 +53,13 @@ find_package( ITK COMPONENTS
   ITKIOImageBase
   ITKIONRRD
 )
-endif()
 
 include( ${ITK_USE_FILE} )
 
 find_package( Qt5 COMPONENTS Core Widgets REQUIRED )
 
 #For Scoliosis App
-option( BUILD_SCOLIOSIS ON)
-if( BUILD_SCOLIOSIS)
+
   include_directories( ${SimpleWebServer_Source_DIR})
 
 
@@ -139,49 +109,18 @@ if( BUILD_SCOLIOSIS)
       target_include_directories(simple-web-server INTERFACE ${OPENSSL_INCLUDE_DIR})
   endif()
 
-  
-  
-endif()
 
 #Common setup
 include_directories( ${CMAKE_SOURCE_DIR} )
-include_directories( ${UltrasoundOpticNerveUI_SOURCE_DIR} )
+
 include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
 
 add_definitions( -DNOMINMAX )
 
 
-#Optic nerve ui executable
-
-qt5_wrap_ui( OpticNerveUI_H OpticNerve.ui )
-qt5_wrap_cpp( optic_source_files_moc OpticNerveUI.h )
-
-set( optic_source_files
-  OpticNerveUIDriver.cxx
-  OpticNerveUI.cxx
-  OpticNerveEstimator.cxx
-)
-
-add_executable( OpticNerveUI
-  ${optic_source_files}
-  ${OpticNerveUI_H}
-  ${optic_source_files_moc}
-)
-
-target_link_libraries( OpticNerveUI PUBLIC
-  ${ITK_LIBRARIES}
-  ${IntersonArraySDKCxx_LIBRARIES}
-  Qt5::Widgets
-)
-
-install( TARGETS OpticNerveUI
-  RUNTIME DESTINATION bin COMPONENT Runtime
-  LIBRARY DESTINATION bin COMPONENT Runtime
-  ARCHIVE DESTINATION lib COMPONENT Development
-)
 
 #Scoliosis ui executable
-if( BUILD_SCOLIOSIS )
+
   qt5_wrap_ui( ScoliosisUI_H Scoliosis.ui )
   qt5_wrap_cpp( scoliosis_source_files_moc ScoliosisUI.h )
 
@@ -215,132 +154,6 @@ if( BUILD_SCOLIOSIS )
   )
 
   install( FILES vertebra-lumbalis-posterior-view.png DESTINATION bin)
-endif()
-
-#MeasurementExplorer ui executable
-if( BUILD_MEASUREMENTEXPLORER )
-  qt5_wrap_ui( MeasurementExplorerUI_H MeasurementExplorer.ui )
-  qt5_wrap_cpp( MeasurementExplorer_source_files_moc MeasurementExplorerUI.h ClickableUltrasound.h)
-
-  set( MeasurementExplorer_source_files
-    MeasurementExplorerDriver.cxx
-    MeasurementExplorerUI.cxx
-    MeasurementWindow.cxx
-	 ClickableUltrasound.cxx
-  )
-
-  add_executable( MeasurementExplorerUI
-    ${MeasurementExplorer_source_files}
-    ${MeasurementExplorerUI_H}
-    ${MeasurementExplorer_source_files_moc}
-  )
-
-  target_link_libraries( MeasurementExplorerUI PUBLIC
-    ${ITK_LIBRARIES}
-    ${IntersonArraySDKCxx_LIBRARIES}
-    Qt5::Widgets
-  )
-
-  install( TARGETS MeasurementExplorerUI
-    RUNTIME DESTINATION bin COMPONENT Runtime
-    LIBRARY DESTINATION bin COMPONENT Runtime
-    ARCHIVE DESTINATION lib COMPONENT Development
-  )
-endif()
-
-#Spectroscopy ui executable
-if( ${Build_Spectroscopy} )
-
-  qt5_wrap_ui( SpectroscopyUI_H Spectroscopy.ui )
-  qt5_wrap_cpp( spectroscopy_source_files_moc SpectroscopyUI.h )
-
-  set( spectroscopy_source_files
-    SpectroscopyUIDriver.cxx
-    SpectroscopyUI.cxx
-  )
-
-  add_executable( SpectroscopyUI
-    ${spectroscopy_source_files}
-    ${SpectroscopyUI_H}
-    ${spectroscopy_source_files_moc}
-  )
-
-  target_link_libraries( SpectroscopyUI PUBLIC
-    ${ITK_LIBRARIES}
-    ${IntersonArraySDKCxx_LIBRARIES}
-    Qt5::Widgets
-  )
-
-  install( TARGETS SpectroscopyUI
-    RUNTIME DESTINATION bin COMPONENT Runtime
-    LIBRARY DESTINATION bin COMPONENT Runtime
-    ARCHIVE DESTINATION lib COMPONENT Development
-  )
-
-
-  qt5_wrap_ui( SpectroscopyBModeUI_H SpectroscopyBMode.ui )
-  qt5_wrap_cpp( spectroscopyBMode_source_files_moc SpectroscopyBModeUI.h )
-
-  set( spectroscopyBMode_source_files
-    SpectroscopyBModeUIDriver.cxx
-    SpectroscopyBModeUI.cxx
-  )
-
-  add_executable( SpectroscopyBModeUI
-    ${spectroscopyBMode_source_files}
-    ${SpectroscopyBModeUI_H}
-    ${spectroscopyBMode_source_files_moc}
-  )
-
-  target_link_libraries( SpectroscopyBModeUI PUBLIC
-    ${ITK_LIBRARIES}
-    ${IntersonArraySDKCxx_LIBRARIES}
-    Qt5::Widgets
-  )
-
-  install( TARGETS SpectroscopyBModeUI
-    RUNTIME DESTINATION bin COMPONENT Runtime
-    LIBRARY DESTINATION bin COMPONENT Runtime
-    ARCHIVE DESTINATION lib COMPONENT Development
-  )
-
-endif()
-
-
-#PTX ui executable
-if( ${Build_PTX} )
-
-  #qt5_wrap_ui( PTXUI_H PTX.ui )
-  qt5_wrap_cpp( ptx_source_files_moc1 PTXUISaveDialog.h )
-  qt5_wrap_cpp( ptx_source_files_moc2 PTXUI.h )
-
-  set( ptx_source_files
-    PTXPatientData.h
-    PTXUISaveDialog.cxx
-    PTXDriver.cxx
-    PTXUI.cxx
-  )
-
-  add_executable( PTXUI 
-    ${ptx_source_files}
-   # ${PTXUI_H}
-    ${ptx_source_files_moc1}
-    ${ptx_source_files_moc2}
-  )
-
-  target_link_libraries( PTXUI PUBLIC
-    ${ITK_LIBRARIES}
-    ${IntersonArraySDKCxx_LIBRARIES}
-    Qt5::Widgets
-  )
-
-  install( TARGETS PTXUI 
-    RUNTIME DESTINATION bin COMPONENT Runtime
-    LIBRARY DESTINATION bin COMPONENT Runtime
-    ARCHIVE DESTINATION lib COMPONENT Development
-  )
-
-endif()
 
 
 
