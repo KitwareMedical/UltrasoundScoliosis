@@ -11,13 +11,13 @@ struct NetworkResponse {
 
 class NeuralNetworkSocketConnection {
 public:
-    NeuralNetworkSocketConnection();
-    bool Connect();
-    NetworkResponse QueryNN(unsigned char * image);
+  NeuralNetworkSocketConnection();
+  bool Connect();
+  NetworkResponse QueryNN(unsigned char * image);
 private:
-    bool connected;
-    boost::asio::io_context io_context;
-    tcp::socket m_socket;
+  bool connected;
+  boost::asio::io_context io_context;
+  tcp::socket m_socket;
 };
 
 #endif //_ScoliosisQueryNN_h
