@@ -56,7 +56,13 @@ namespace Ui
   class MainWindow;
 }
 
-enum ProgramState { WaitingForInitialization, WaitingToGenerateIdentifier, Recording, WaitingToRecord, WritingToDisk};
+enum ProgramState {
+  WaitingForInitialization,
+  WaitingToGenerateIdentifier,
+  Recording,
+  WaitingToRecord,
+  WritingToDisk
+};
 
   //Declaration of OpticNerveUI
 class ScoliosisUI : public QMainWindow
@@ -119,11 +125,11 @@ private:
   boost::property_tree::ptree scan_metadata;
 
   static void __stdcall ProbeHardButtonCallback( void *instance )
-    {
+  {
     ScoliosisUI *oui = ( ScoliosisUI* )instance;
     std::cout << "ding!" << std::endl;
     //oui->ToggleEstimation();
-    };
+  };
 
 };
 

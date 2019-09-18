@@ -1,8 +1,8 @@
 /*=========================================================================
 
-Library:   UltrasoundIntersonApps
+Library:   UltrasoundScoliosis
 
-Copyright 2010 Kitware Inc. 28 Corporate Drive,
+Copyright Kitware Inc. 28 Corporate Drive,
 Clifton Park, NY, 12065, USA.
 
 All rights reserved.
@@ -42,15 +42,15 @@ int main( int argc, char *argv[] )
   window.show();
 
   try
-    {
+  {
     return app.exec();
-    }
+  }
   catch( std::exception &e )
-    {
+  {
     std::cout << e.what() << std::endl;
-    }
+  }
   catch( ... )
-    {
+  {
     std::cout << "something failed" << std::endl;
-    }
+  }
 }
