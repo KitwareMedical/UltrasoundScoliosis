@@ -38,9 +38,6 @@ limitations under the License.
 #include <QCloseEvent>
 
 
-#define BOOST_SPIRIT_THREADSAFE
-#include <boost/property_tree/json_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
 
 
 #include "IntersonArrayDeviceRF.hxx"
@@ -122,7 +119,9 @@ private:
   itk::ImageDuplicator<IntersonArrayDeviceRF::ImageType>::Pointer duplicator 
     = itk::ImageDuplicator<IntersonArrayDeviceRF::ImageType>::New();
   std::vector<IntersonArrayDeviceRF::ImageType::Pointer> savedImages;
-  boost::property_tree::ptree scan_metadata;
+
+  //replace this with non boost component
+  //  boost::property_tree::ptree scan_metadata;
 
   static void __stdcall ProbeHardButtonCallback( void *instance )
   {
